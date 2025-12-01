@@ -33,6 +33,14 @@ samples, guidance on mobile development, and a full API reference.
    flutter build apk --dart-define-from-file=.env
    ```
 
+> Tip: bạn có thể dùng script hỗ trợ để tránh quên truyền biến môi trường:
+>
+> ```bash
+> ./scripts/run_with_gemini_env.sh
+> # hoặc thêm tham số thiết bị
+> ./scripts/run_with_gemini_env.sh -d emulator-5554
+> ```
+
 ### 2) Lưu API key trong Firebase Remote Config
 
 1. Lưu khóa (ví dụ key `gemini_api_key`) trên Remote Config và bật mã hóa phía server nếu có.
