@@ -23,6 +23,7 @@ samples, guidance on mobile development, and a full API reference.
 
 1. Sao chép `.env.example` thành `.env` và thay giá trị:
    ```bash
+   cp .env.example .env
    # mở .env và thay your-gemini-api-key
    ```
 2. Khi chạy hoặc build, truyền biến môi trường qua `--dart-define-from-file` (Flutter sẽ gán vào `const String.fromEnvironment('GEMINI_API_KEY')` trong `GeminiService`):
@@ -41,6 +42,8 @@ samples, guidance on mobile development, and a full API reference.
 > # hoặc thêm tham số thiết bị
 > ./scripts/run_with_gemini_env.sh -d emulator-5554
 > ```
+
+> Nếu bạn chỉ muốn thử nhanh trên thiết bị cá nhân, mở trang "Trợ lý Gemini" trong app, bấm nút "Nhập API key" và dán khóa. Khóa sẽ được lưu cục bộ bằng GetStorage (không commit lên Git), có thể xóa bất cứ lúc nào trong hộp thoại đó.
 
 ### 2) Lưu API key trong Firebase Remote Config
 

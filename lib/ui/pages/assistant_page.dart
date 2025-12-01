@@ -24,6 +24,7 @@ class GeminiAssistantPage extends StatefulWidget {
 
 class _GeminiAssistantPageState extends State<GeminiAssistantPage> {
   final TextEditingController _inputController = TextEditingController();
+  final TextEditingController _apiKeyController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final GeminiService _geminiService = GeminiService();
   late final TaskController _taskController;
@@ -37,6 +38,7 @@ class _GeminiAssistantPageState extends State<GeminiAssistantPage> {
     _taskController = Get.isRegistered<TaskController>()
         ? Get.find<TaskController>()
         : Get.put(TaskController());
+    _apiKeyController.text = _geminiService.storedApiKey ?? '';
     _messages.add(const AssistantMessage(
       text:
           'Tôi là trợ lý Gemini. Bạn có thể yêu cầu kiểm tra trạng thái nhiệm vụ, thêm mới, đặt nhắc lịch hoặc nhờ tôi tóm tắt tiến độ tuần.',
@@ -47,6 +49,7 @@ class _GeminiAssistantPageState extends State<GeminiAssistantPage> {
   @override
   void dispose() {
     _inputController.dispose();
+    _apiKeyController.dispose();
     _scrollController.dispose();
     super.dispose();
   }
@@ -60,6 +63,13 @@ class _GeminiAssistantPageState extends State<GeminiAssistantPage> {
         backgroundColor: theme.colorScheme.background,
         foregroundColor: theme.colorScheme.onBackground,
         elevation: 0,
+        actions: [
+          IconButton(
+            tooltip: 'Cập nhật GEMINI_API_KEY',
+            icon: const Icon(Icons.vpn_key_outlined),
+            onPressed: _promptForApiKey,
+          ),
+        ],
       ),
       backgroundColor: theme.colorScheme.background,
       body: SafeArea(
@@ -100,7 +110,7 @@ class _GeminiAssistantPageState extends State<GeminiAssistantPage> {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
-        'Chưa cấu hình GEMINI_API_KEY. Thêm --dart-define=GEMINI_API_KEY=YOUR_KEY khi build để bật trợ lý.',
+        'Chưa cấu hình GEMINI_API_KEY. Thêm --dart-define=GEMINI_API_KEY=YOUR_KEY khi build hoặc nhấn "Nhập API key" để lưu tạm thời (cục bộ, không commit).',
         style: theme.textTheme.bodyMedium,
       ),
     );
@@ -168,6 +178,15 @@ class _GeminiAssistantPageState extends State<GeminiAssistantPage> {
               ),
             ),
           ),
+          if (!_geminiService.isConfigured)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: _promptForApiKey,
+                icon: const Icon(Icons.vpn_key, size: 18),
+                label: const Text('Nhập API key'),
+              ),
+            ),
         ],
       ),
     );
@@ -201,6 +220,61 @@ class _GeminiAssistantPageState extends State<GeminiAssistantPage> {
 
     _isSending.value = false;
     await _scrollToBottom();
+  }
+
+  Future<void> _promptForApiKey() async {
+    _apiKeyController.text = _geminiService.storedApiKey ?? '';
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Thiết lập GEMINI_API_KEY'),
+          content: TextField(
+            controller: _apiKeyController,
+            decoration: const InputDecoration(
+              labelText: 'Nhập API key (sẽ lưu cục bộ)',
+              hintText: 'AIza... (không commit vào git)',
+            ),
+            autofocus: true,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Hủy'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(''),
+              child: const Text('Xóa key'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(_apiKeyController.text),
+              child: const Text('Lưu'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (result == null) return;
+
+    if (result.trim().isEmpty) {
+      await _geminiService.clearApiKey();
+      if (mounted) {
+        setState(() {});
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đã xóa GEMINI_API_KEY lưu cục bộ.')),
+        );
+      }
+      return;
+    }
+
+    await _geminiService.updateApiKey(result);
+    if (mounted) {
+      setState(() {});
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đã lưu GEMINI_API_KEY cục bộ cho phiên bản này.')),
+      );
+    }
   }
 
   Future<void> _scrollToBottom() async {

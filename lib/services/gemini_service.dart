@@ -2,23 +2,58 @@ import 'dart:async';
 
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:intl/intl.dart';
+import 'package:get_storage/get_storage.dart';
 
 import '../models/task.dart';
 
-class GeminiService {
-  GeminiService({String? apiKey, GenerativeModel? model})
-      : _apiKey = apiKey ?? const String.fromEnvironment('GEMINI_API_KEY'),
-        _model = model;
+class GeminiKeyStore {
+  GeminiKeyStore([GetStorage? box]) : _box = box ?? GetStorage();
 
-  final String _apiKey;
+  static const _key = 'gemini_api_key';
+
+  final GetStorage _box;
+
+  String? read() => _box.read<String>(_key);
+
+  Future<void> save(String apiKey) => _box.write(_key, apiKey.trim());
+
+  Future<void> clear() => _box.remove(_key);
+}
+
+class GeminiService {
+  GeminiService({String? apiKey, GenerativeModel? model, GeminiKeyStore? keyStore})
+      : _keyStore = keyStore ?? GeminiKeyStore(),
+        _model = model {
+    _apiKey = (apiKey ?? _keyStore.read() ?? _fallbackApiKey).trim();
+  }
+
+  static const String _fallbackApiKey =
+      String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
+
+  final GeminiKeyStore _keyStore;
+  late String _apiKey;
   GenerativeModel? _model;
   ChatSession? _chatSession;
 
   bool get isConfigured => _apiKey.isNotEmpty;
 
+  String? get storedApiKey => _keyStore.read();
+
+  Future<void> updateApiKey(String apiKey) async {
+    _apiKey = apiKey.trim();
+    await _keyStore.save(_apiKey);
+    _resetSession();
+  }
+
+  Future<void> clearApiKey() async {
+    _apiKey = '';
+    await _keyStore.clear();
+    _resetSession();
+  }
+
   GenerativeModel get _resolvedModel {
     _model ??= GenerativeModel(
-      model: 'gemini-1.5-flash',
+      model: 'gemini-flash-latest',
       apiKey: _apiKey,
     );
     return _model!;
@@ -81,7 +116,7 @@ class GeminiService {
             .join('\n');
 
     final prompt =
-        'Hãy tạo bản tóm tắt tiến độ tuần cho ứng dụng quản lý nhiệm vụ. \n'
+        'Hãy tạo bản tóm tắt tiến độ tuần cho ứng dụng quản lý nhiệm vụ. '
         'Phân tích các nhiệm vụ hoàn thành, nhiệm vụ trễ, ưu tiên tuần tới và gợi ý nhắc lịch.\n\n'
         'Nhiệm vụ hoàn thành:\n$completedText\n\n'
         'Nhiệm vụ còn lại hoặc trễ:\n$pendingText\n\n'
@@ -98,7 +133,7 @@ class GeminiService {
   }
 
   String get _missingKeyMessage =>
-      'Gemini chưa được cấu hình. Thiết lập biến môi trường GEMINI_API_KEY hoặc truyền apiKey khi khởi tạo.';
+      'Gemini chưa được cấu hình. Thiết lập GEMINI_API_KEY qua --dart-define hoặc nhập key trực tiếp trong ứng dụng.';
 
   String _formatDueDate(String? dueDate, DateFormat formatter) {
     if (dueDate == null) return 'chưa có hạn';
@@ -107,5 +142,10 @@ class GeminiService {
     } catch (_) {
       return dueDate;
     }
+  }
+
+  void _resetSession() {
+    _model = null;
+    _chatSession = null;
   }
 }
