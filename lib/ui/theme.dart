@@ -13,12 +13,18 @@ const Color darkHeaderClr = Color(0xFF424242);
 class Themes {
   static final light = ThemeData(
     primaryColor: primaryClr,
-    brightness: Brightness.light, colorScheme: const ColorScheme.light(background: Colors.white)
+    brightness: Brightness.light,
+    colorScheme:
+        const ColorScheme.light(background: Colors.white, brightness: Brightness.light),
   );
 
   static final dark = ThemeData(
     primaryColor: darkGreyClr,
-    brightness: Brightness.dark, colorScheme: const ColorScheme.light(background: Colors.white)
+    brightness: Brightness.dark,
+    colorScheme: const ColorScheme.dark(
+      background: darkGreyClr,
+      brightness: Brightness.dark,
+    ),
   );
 }
 

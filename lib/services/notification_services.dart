@@ -7,7 +7,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 import '/models/task.dart';
 import '/ui/pages/notification_screen.dart';
-import 'package:flutter_timezone/flutter_timezone.dart';
+import 'package:flutter/services.dart';
 
 class NotifyHelper {
   FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -161,7 +161,9 @@ class NotifyHelper {
 
   Future<void> _configureLocalTimeZone() async {
     tz.initializeTimeZones();
-    final String timeZoneName = await FlutterTimezone.getLocalTimezone();
+    const channel = MethodChannel('task_paven/timezone');
+    final String timeZoneName =
+        await channel.invokeMethod<String>('getLocalTimezone') ?? 'Etc/UTC';
     tz.setLocalLocation(tz.getLocation(timeZoneName));
   }
 
