@@ -31,7 +31,7 @@ class AssistantMessage {
 class _GeminiMessageStore {
   static const _historyKey = 'gemini_chat_history';
 
-  const _GeminiMessageStore([GetStorage? box]) : _box = box ?? GetStorage();
+  _GeminiMessageStore([GetStorage? box]) : _box = box ?? GetStorage();
 
   final GetStorage _box;
 
@@ -64,7 +64,7 @@ class _GeminiAssistantPageState extends State<GeminiAssistantPage> {
   final TextEditingController _apiKeyController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final GeminiService _geminiService = GeminiService();
-  final _GeminiMessageStore _messageStore = const _GeminiMessageStore();
+  final _GeminiMessageStore _messageStore = _GeminiMessageStore();
   late final TaskController _taskController;
 
   final RxList<AssistantMessage> _messages = <AssistantMessage>[].obs;
