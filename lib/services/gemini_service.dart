@@ -53,7 +53,7 @@ class GeminiService {
 
   GenerativeModel get _resolvedModel {
     _model ??= GenerativeModel(
-      model: 'gemini-1.5-flash',
+      model: 'gemini-flash-latest',
       apiKey: _apiKey,
     );
     return _model!;
@@ -116,7 +116,7 @@ class GeminiService {
             .join('\n');
 
     final prompt =
-        'Hãy tạo bản tóm tắt tiến độ tuần cho ứng dụng quản lý nhiệm vụ. '\
+        'Hãy tạo bản tóm tắt tiến độ tuần cho ứng dụng quản lý nhiệm vụ. '
         'Phân tích các nhiệm vụ hoàn thành, nhiệm vụ trễ, ưu tiên tuần tới và gợi ý nhắc lịch.\n\n'
         'Nhiệm vụ hoàn thành:\n$completedText\n\n'
         'Nhiệm vụ còn lại hoặc trễ:\n$pendingText\n\n'
