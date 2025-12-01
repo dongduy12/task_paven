@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
@@ -11,8 +12,44 @@ import '../theme.dart';
 class AssistantMessage {
   const AssistantMessage({required this.text, required this.isUser});
 
+  factory AssistantMessage.fromJson(Map<String, dynamic> json) {
+    return AssistantMessage(
+      text: json['text'] as String? ?? '',
+      isUser: json['isUser'] == true,
+    );
+  }
+
   final String text;
   final bool isUser;
+
+  Map<String, dynamic> toJson() => {
+        'text': text,
+        'isUser': isUser,
+      };
+}
+
+class _GeminiMessageStore {
+  static const _historyKey = 'gemini_chat_history';
+
+  const _GeminiMessageStore([GetStorage? box]) : _box = box ?? GetStorage();
+
+  final GetStorage _box;
+
+  List<AssistantMessage> read() {
+    final raw = _box.read<List<dynamic>>(_historyKey) ?? <dynamic>[];
+    return raw
+        .whereType<Map>()
+        .map((entry) => AssistantMessage.fromJson(
+            entry.map((key, value) => MapEntry(key.toString(), value))))
+        .toList();
+  }
+
+  Future<void> save(List<AssistantMessage> messages) async {
+    await _box.write(
+      _historyKey,
+      messages.map((message) => message.toJson()).toList(),
+    );
+  }
 }
 
 class GeminiAssistantPage extends StatefulWidget {
@@ -27,6 +64,7 @@ class _GeminiAssistantPageState extends State<GeminiAssistantPage> {
   final TextEditingController _apiKeyController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final GeminiService _geminiService = GeminiService();
+  final _GeminiMessageStore _messageStore = const _GeminiMessageStore();
   late final TaskController _taskController;
 
   final RxList<AssistantMessage> _messages = <AssistantMessage>[].obs;
@@ -38,12 +76,9 @@ class _GeminiAssistantPageState extends State<GeminiAssistantPage> {
     _taskController = Get.isRegistered<TaskController>()
         ? Get.find<TaskController>()
         : Get.put(TaskController());
+    _taskController.getTasks();
     _apiKeyController.text = _geminiService.storedApiKey ?? '';
-    _messages.add(const AssistantMessage(
-      text:
-          'Tôi là trợ lý Gemini. Bạn có thể yêu cầu kiểm tra trạng thái nhiệm vụ, thêm mới, đặt nhắc lịch hoặc nhờ tôi tóm tắt tiến độ tuần.',
-      isUser: false,
-    ));
+    _restoreMessages();
   }
 
   @override
@@ -196,19 +231,21 @@ class _GeminiAssistantPageState extends State<GeminiAssistantPage> {
     final text = _inputController.text.trim();
     if (text.isEmpty) return;
 
-    _messages.add(AssistantMessage(text: text, isUser: true));
+    await _addMessage(AssistantMessage(text: text, isUser: true));
     _inputController.clear();
     await _scrollToBottom();
 
+    await _handleTaskCommands(text);
+
     _isSending.value = true;
     final reply = await _geminiService.sendChat(text);
-    _messages.add(AssistantMessage(text: reply, isUser: false));
+    await _addMessage(AssistantMessage(text: reply, isUser: false));
     _isSending.value = false;
     await _scrollToBottom();
   }
 
   Future<void> _requestWeeklySummary() async {
-    _messages.add(const AssistantMessage(
+    await _addMessage(const AssistantMessage(
       text: 'Đang tạo báo cáo tuần dựa trên các nhiệm vụ hiện có...',
       isUser: true,
     ));
@@ -216,7 +253,7 @@ class _GeminiAssistantPageState extends State<GeminiAssistantPage> {
 
     final List<Task> tasks = List<Task>.from(_taskController.taskList);
     final summary = await _geminiService.generateWeeklySummary(tasks);
-    _messages.add(AssistantMessage(text: summary, isUser: false));
+    await _addMessage(AssistantMessage(text: summary, isUser: false));
 
     _isSending.value = false;
     await _scrollToBottom();
@@ -285,6 +322,102 @@ class _GeminiAssistantPageState extends State<GeminiAssistantPage> {
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOut,
     );
+  }
+
+  Future<void> _addMessage(AssistantMessage message) async {
+    _messages.add(message);
+    await _messageStore.save(_messages);
+  }
+
+  void _restoreMessages() {
+    final saved = _messageStore.read();
+    if (saved.isEmpty) {
+      _messages.add(const AssistantMessage(
+        text:
+            'Tôi là trợ lý Gemini. Bạn có thể yêu cầu kiểm tra trạng thái nhiệm vụ, thêm mới, đặt nhắc lịch hoặc nhờ tôi tóm tắt tiến độ tuần.',
+        isUser: false,
+      ));
+      _messageStore.save(_messages);
+      return;
+    }
+
+    _messages.assignAll(saved);
+  }
+
+  Future<void> _handleTaskCommands(String userInput) async {
+    final normalized = userInput.toLowerCase();
+    if (normalized.contains('thêm nhiệm vụ') || normalized.contains('tạo nhiệm vụ')) {
+      final title = _extractTitle(userInput, ['thêm nhiệm vụ', 'tạo nhiệm vụ']);
+      if (title != null && title.isNotEmpty) {
+        await _taskController.addTask(task: _buildTaskFromTitle(title));
+        await _addMessage(AssistantMessage(
+          text: 'Đã thêm nhiệm vụ "$title" vào danh sách của bạn.',
+          isUser: false,
+        ));
+      }
+    }
+
+    if (normalized.contains('xóa nhiệm vụ') || normalized.contains('xoá nhiệm vụ')) {
+      final title = _extractTitle(userInput, ['xóa nhiệm vụ', 'xoá nhiệm vụ']);
+      if (title != null && title.isNotEmpty) {
+        await _taskController.getTasks();
+        final deleted = await _deleteTaskByTitle(title);
+        if (deleted) {
+          await _addMessage(AssistantMessage(
+            text: 'Đã xóa nhiệm vụ chứa từ khóa "$title".',
+            isUser: false,
+          ));
+        } else {
+          await _addMessage(AssistantMessage(
+            text: 'Không tìm thấy nhiệm vụ phù hợp với "$title" để xóa.',
+            isUser: false,
+          ));
+        }
+      }
+    }
+  }
+
+  String? _extractTitle(String input, List<String> keywords) {
+    final lower = input.toLowerCase();
+    for (final keyword in keywords) {
+      final index = lower.indexOf(keyword);
+      if (index != -1) {
+        final rawTitle = input.substring(index + keyword.length);
+        final cleaned = rawTitle.replaceFirst(RegExp(r'^[\s:,-]+'), '').trim();
+        if (cleaned.isNotEmpty) return cleaned;
+      }
+    }
+    return null;
+  }
+
+  Task _buildTaskFromTitle(String title) {
+    final now = DateTime.now();
+    final dateFormatter = DateFormat.yMd();
+    final timeFormatter = DateFormat('hh:mm a');
+
+    return Task(
+      title: title,
+      note: 'Tạo từ cuộc hội thoại với Gemini',
+      isCompleted: 0,
+      date: dateFormatter.format(now),
+      startTime: timeFormatter.format(now),
+      endTime: timeFormatter.format(now.add(const Duration(minutes: 30))),
+      color: 0,
+      remind: 0,
+      repeat: 'None',
+    );
+  }
+
+  Future<bool> _deleteTaskByTitle(String keyword) async {
+    final query = keyword.toLowerCase();
+    for (final task in _taskController.taskList) {
+      final title = (task.title ?? '').toLowerCase();
+      if (title.contains(query)) {
+        await _taskController.deleteTasks(task);
+        return true;
+      }
+    }
+    return false;
   }
 }
 

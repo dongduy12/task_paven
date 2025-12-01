@@ -5,8 +5,10 @@ import 'package:task_paven/models/task.dart';
 class TaskController extends GetxController {
   final RxList<Task> taskList = <Task>[].obs;
 
-  Future<int> addTask({Task? task}) {
-    return DBHelper.insert(task);
+  Future<int> addTask({Task? task}) async {
+    final id = await DBHelper.insert(task);
+    await getTasks();
+    return id;
   }
 
   Future<void> getTasks() async {
@@ -14,18 +16,18 @@ class TaskController extends GetxController {
     taskList.assignAll(tasks.map((data) => Task.fromJson(data)).toList());
   }
 
-  void deleteTasks(Task task) async {
+  Future<void> deleteTasks(Task task) async {
     await DBHelper.delete(task);
-    getTasks();
+    await getTasks();
   }
 
-  void deleteAllTasks() async {
+  Future<void> deleteAllTasks() async {
     await DBHelper.deleteAll();
-    getTasks();
+    await getTasks();
   }
 
-  void markTaskAsCompleted(int id) async {
+  Future<void> markTaskAsCompleted(int id) async {
     await DBHelper.update(id);
-    getTasks();
+    await getTasks();
   }
 }
