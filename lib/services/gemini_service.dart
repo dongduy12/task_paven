@@ -23,14 +23,15 @@ class GeminiKeyStore {
 class GeminiService {
   GeminiService({String? apiKey, GenerativeModel? model, GeminiKeyStore? keyStore})
       : _keyStore = keyStore ?? GeminiKeyStore(),
-        _model = model,
-        _apiKey = (apiKey ?? _keyStore.read() ?? _fallbackApiKey).trim();
+        _model = model {
+    _apiKey = (apiKey ?? _keyStore.read() ?? _fallbackApiKey).trim();
+  }
 
   static const String _fallbackApiKey =
       String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
 
   final GeminiKeyStore _keyStore;
-  String _apiKey;
+  late String _apiKey;
   GenerativeModel? _model;
   ChatSession? _chatSession;
 
