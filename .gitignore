@@ -33,6 +33,9 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# Environment files (keep secrets out of VCS)
+.env
+
 # Symbolication related
 app.*.symbols
 
