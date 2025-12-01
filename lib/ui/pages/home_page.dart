@@ -13,6 +13,7 @@ import '../../controllers/task_controller.dart';
 import '../../models/task.dart';
 import '../../services/notification_services.dart';
 import '../size_config.dart';
+import 'assistant_page.dart';
 import '../theme.dart';
 
 class HomePage extends StatefulWidget {
@@ -75,6 +76,11 @@ class _HomePageState extends State<HomePage> {
       // ignore: deprecated_member_use
       backgroundColor: context.theme.colorScheme.background,
       actions: [
+        IconButton(
+          icon: Icon(Icons.chat_bubble_outline,
+              size: 24, color: Get.isDarkMode ? Colors.white : darkGreyClr),
+          onPressed: () => Get.to(() => const GeminiAssistantPage()),
+        ),
         IconButton(
           icon: Icon(Icons.cleaning_services_outlined,
               size: 24, color: Get.isDarkMode ? Colors.white : darkGreyClr),
