@@ -36,6 +36,8 @@ samples, guidance on mobile development, and a full API reference.
 > Tip: bạn có thể dùng script hỗ trợ để tránh quên truyền biến môi trường:
 >
 > ```bash
+> # export tạm thời khóa của bạn (hoặc điền trong file .env đã được .gitignore)
+> export GEMINI_API_KEY="your-gemini-api-key"
 > ./scripts/run_with_gemini_env.sh
 > # hoặc thêm tham số thiết bị
 > ./scripts/run_with_gemini_env.sh -d emulator-5554

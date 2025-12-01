@@ -1,16 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [ ! -f .env ]; then
-  echo "⚠️  Không tìm thấy .env. Sao chép .env.example và điền GEMINI_API_KEY." >&2
-  exit 1
+if [ -z "${GEMINI_API_KEY:-}" ]; then
+  if [ -f .env ]; then
+    # shellcheck disable=SC1091
+    source .env
+  else
+    echo "⚠️  Không tìm thấy biến môi trường GEMINI_API_KEY hoặc file .env." >&2
+    echo "➡️  Sao chép .env.example thành .env và điền GEMINI_API_KEY của bạn (file này đã bị .gitignore)." >&2
+    exit 1
+  fi
 fi
 
-# shellcheck disable=SC1091
-source .env
-
 if [ -z "${GEMINI_API_KEY:-}" ]; then
-  echo "❌ Biến GEMINI_API_KEY chưa được thiết lập trong .env" >&2
+  echo "❌ Biến GEMINI_API_KEY chưa được thiết lập. Cập nhật .env hoặc export GEMINI_API_KEY trước khi chạy." >&2
   exit 1
 fi
 
