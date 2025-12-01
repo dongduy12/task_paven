@@ -23,7 +23,6 @@ samples, guidance on mobile development, and a full API reference.
 
 1. Sao chép `.env.example` thành `.env` và thay giá trị:
    ```bash
-   cp .env.example .env
    # mở .env và thay your-gemini-api-key
    ```
 2. Khi chạy hoặc build, truyền biến môi trường qua `--dart-define-from-file` (Flutter sẽ gán vào `const String.fromEnvironment('GEMINI_API_KEY')` trong `GeminiService`):

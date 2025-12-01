@@ -81,7 +81,7 @@ class GeminiService {
             .join('\n');
 
     final prompt =
-        'Hãy tạo bản tóm tắt tiến độ tuần cho ứng dụng quản lý nhiệm vụ. '\n
+        'Hãy tạo bản tóm tắt tiến độ tuần cho ứng dụng quản lý nhiệm vụ. \n'
         'Phân tích các nhiệm vụ hoàn thành, nhiệm vụ trễ, ưu tiên tuần tới và gợi ý nhắc lịch.\n\n'
         'Nhiệm vụ hoàn thành:\n$completedText\n\n'
         'Nhiệm vụ còn lại hoặc trễ:\n$pendingText\n\n'
