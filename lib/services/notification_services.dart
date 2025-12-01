@@ -92,8 +92,6 @@ class NotifyHelper {
             'your channel id', 'your channel name',
             channelDescription: 'your channel description'),
       ),
-      // ignore: deprecated_member_use
-      matchDateTimeComponents: DateTimeComponents.time,
       payload: '${task.title}|${task.note}|${task.startTime}|',
     );
   }
