@@ -349,9 +349,13 @@ class _GeminiAssistantPageState extends State<GeminiAssistantPage> {
     if (normalized.contains('thêm nhiệm vụ') || normalized.contains('tạo nhiệm vụ')) {
       final title = _extractTitle(userInput, ['thêm nhiệm vụ', 'tạo nhiệm vụ']);
       if (title != null && title.isNotEmpty) {
-        await _taskController.addTask(task: _buildTaskFromTitle(title));
+        final scheduledStart = _parseScheduledStart(userInput);
+        await _taskController
+            .addTask(task: _buildTaskFromInput(title, scheduledStart));
+        final dateText = DateFormat.yMd().format(scheduledStart);
+        final timeText = DateFormat('HH:mm').format(scheduledStart);
         await _addMessage(AssistantMessage(
-          text: 'Đã thêm nhiệm vụ "$title" vào danh sách của bạn.',
+          text: 'Đã thêm nhiệm vụ "$title" vào ngày $dateText lúc $timeText.',
           isUser: false,
         ));
       }
@@ -390,8 +394,7 @@ class _GeminiAssistantPageState extends State<GeminiAssistantPage> {
     return null;
   }
 
-  Task _buildTaskFromTitle(String title) {
-    final now = DateTime.now();
+  Task _buildTaskFromInput(String title, DateTime scheduledStart) {
     final dateFormatter = DateFormat.yMd();
     final timeFormatter = DateFormat('hh:mm a');
 
@@ -399,13 +402,145 @@ class _GeminiAssistantPageState extends State<GeminiAssistantPage> {
       title: title,
       note: 'Tạo từ cuộc hội thoại với Gemini',
       isCompleted: 0,
-      date: dateFormatter.format(now),
-      startTime: timeFormatter.format(now),
-      endTime: timeFormatter.format(now.add(const Duration(minutes: 30))),
+      date: dateFormatter.format(scheduledStart),
+      startTime: timeFormatter.format(scheduledStart),
+      endTime: timeFormatter.format(scheduledStart.add(const Duration(minutes: 30))),
       color: 0,
       remind: 0,
       repeat: 'None',
     );
+  }
+
+  DateTime _parseScheduledStart(String rawInput) {
+    final now = DateTime.now();
+    final normalized = rawInput.toLowerCase();
+    final scheduledDate = _parseDateFromInput(normalized, now) ??
+        DateTime(now.year, now.month, now.day);
+    final startTime = _parseTimeOfDay(normalized, now);
+
+    return DateTime(
+      scheduledDate.year,
+      scheduledDate.month,
+      scheduledDate.day,
+      startTime.hour,
+      startTime.minute,
+    );
+  }
+
+  DateTime? _parseDateFromInput(String normalizedInput, DateTime now) {
+    final explicitDateMatch =
+        RegExp(r'(\d{1,2})[\\/-](\d{1,2})(?:[\\/-](\d{2,4}))?')
+            .firstMatch(normalizedInput);
+    if (explicitDateMatch != null) {
+      final day = int.tryParse(explicitDateMatch.group(1)!);
+      final month = int.tryParse(explicitDateMatch.group(2)!);
+      final yearRaw = explicitDateMatch.group(3);
+      final year = _resolveYear(yearRaw, now.year);
+
+      if (day != null && month != null) {
+        final parsed = DateTime(year, month, day);
+        if (yearRaw == null &&
+            parsed.isBefore(DateTime(now.year, now.month, now.day))) {
+          return DateTime(year + 1, month, day);
+        }
+        return parsed;
+      }
+    }
+
+    if (normalizedInput.contains('hôm nay')) {
+      return DateTime(now.year, now.month, now.day);
+    }
+    if (normalizedInput.contains('ngày mai') || normalizedInput.contains('mai')) {
+      final tomorrow = now.add(const Duration(days: 1));
+      return DateTime(tomorrow.year, tomorrow.month, tomorrow.day);
+    }
+    if (normalizedInput.contains('ngày mốt') || normalizedInput.contains('mốt')) {
+      final nextTwoDays = now.add(const Duration(days: 2));
+      return DateTime(nextTwoDays.year, nextTwoDays.month, nextTwoDays.day);
+    }
+
+    final weekday = _extractWeekday(normalizedInput);
+    if (weekday != null) {
+      final daysToAdd = (weekday - now.weekday + 7) % 7;
+      return DateTime(now.year, now.month, now.day)
+          .add(Duration(days: daysToAdd));
+    }
+
+    return null;
+  }
+
+  int _resolveYear(String? yearRaw, int currentYear) {
+    if (yearRaw == null) return currentYear;
+    if (yearRaw.length == 2) {
+      return 2000 + int.parse(yearRaw);
+    }
+    return int.tryParse(yearRaw) ?? currentYear;
+  }
+
+  int? _extractWeekday(String normalizedInput) {
+    const weekdayKeywords = {
+      'thứ 2': DateTime.monday,
+      'thứ hai': DateTime.monday,
+      'thứ 3': DateTime.tuesday,
+      'thứ ba': DateTime.tuesday,
+      'thứ 4': DateTime.wednesday,
+      'thứ tư': DateTime.wednesday,
+      'thứ 5': DateTime.thursday,
+      'thứ năm': DateTime.thursday,
+      'thứ 6': DateTime.friday,
+      'thứ sáu': DateTime.friday,
+      'thứ 7': DateTime.saturday,
+      'thứ bảy': DateTime.saturday,
+      'thứ bay': DateTime.saturday,
+      'chủ nhật': DateTime.sunday,
+      'chu nhat': DateTime.sunday,
+      'cn': DateTime.sunday,
+    };
+
+    for (final entry in weekdayKeywords.entries) {
+      if (normalizedInput.contains(entry.key)) {
+        return entry.value;
+      }
+    }
+
+    final numericMatch = RegExp(r'thứ\s*(\d)').firstMatch(normalizedInput);
+    if (numericMatch != null) {
+      final dayNumber = int.tryParse(numericMatch.group(1) ?? '');
+      if (dayNumber != null && dayNumber >= 2 && dayNumber <= 7) {
+        return dayNumber - 1;
+      }
+    }
+    return null;
+  }
+
+  TimeOfDay _parseTimeOfDay(String normalizedInput, DateTime now) {
+    final match = RegExp(
+            r'(\d{1,2})(?:[:hH](\d{1,2}))?\s*(am|pm|a\.m\.|p\.m\.|sáng|sang|chiều|chieu|tối|toi|đêm|dem)?')
+        .firstMatch(normalizedInput);
+
+    if (match == null) {
+      return TimeOfDay(hour: now.hour, minute: now.minute);
+    }
+
+    var hour = int.tryParse(match.group(1) ?? '') ?? now.hour;
+    final minute = int.tryParse(match.group(2) ?? '0') ?? 0;
+    final suffix = match.group(3) ?? '';
+
+    final isPm =
+        suffix.contains('pm') || suffix.contains('p.m') || suffix.contains('chiều') || suffix.contains('chieu') || suffix.contains('tối') || suffix.contains('toi') || suffix.contains('đêm') || suffix.contains('dem');
+    final isAm =
+        suffix.contains('am') || suffix.contains('a.m') || suffix.contains('sáng') || suffix.contains('sang');
+
+    if (hour >= 1 && hour <= 12 && isPm && hour != 12) {
+      hour += 12;
+    } else if (hour == 12 && isAm) {
+      hour = 0;
+    }
+
+    hour = hour.clamp(0, 23);
+    final validatedMinute = minute.clamp(0, 59);
+
+    return TimeOfDay(hour: hour, minute: validatedMinute);
   }
 
   Future<bool> _deleteTaskByTitle(String keyword) async {
