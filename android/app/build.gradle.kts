@@ -1,7 +1,15 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android Gradle plugin.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+// ĐỌC THÔNG TIN TỪ android/key.properties
+val keystoreProperties = Properties().apply {
+    load(FileInputStream(rootProject.file("key.properties")))
 }
 
 android {
@@ -16,20 +24,32 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.paven_task.task_paven"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
+
+    // ➜ KHAI BÁO SIGNING CONFIG RELEASE
+    signingConfigs {
+        create("release") {
+            storeFile = file(keystoreProperties.getProperty("storeFile"))
+            storePassword = keystoreProperties.getProperty("storePassword")
+            keyAlias = keystoreProperties.getProperty("keyAlias")
+            keyPassword = keystoreProperties.getProperty("keyPassword")
+        }
+    }
+
     buildTypes {
-        release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+        getByName("release") {
+            // Dùng keystore release, KHÔNG dùng debug nữa
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = false       // nếu sau này muốn bật R8 thì chỉnh ở đây
+            isShrinkResources = false
+        }
+        getByName("debug") {
+            // giữ nguyên debug mặc định
         }
     }
 }
