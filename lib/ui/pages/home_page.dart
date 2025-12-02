@@ -14,6 +14,7 @@ import '../../models/task.dart';
 import '../../services/notification_services.dart';
 import '../size_config.dart';
 import 'assistant_page.dart';
+import 'dashboard_page.dart';
 import '../theme.dart';
 
 class HomePage extends StatefulWidget {
@@ -41,19 +42,43 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     SizeConfig().init(context);
-    return Scaffold(
-      // ignore: deprecated_member_use
-      backgroundColor: context.theme.colorScheme.background,
-      appBar: _customAppBar(),
-      body: Column(
-        children: [
-          _addTaskBar(),
-          _addDateBar(),
-          const SizedBox(
-            height: 6,
-          ),
-          _showTasks(),
-        ],
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        // ignore: deprecated_member_use
+        backgroundColor: context.theme.colorScheme.background,
+        appBar: _customAppBar(),
+        body: Column(
+          children: [
+            _addTaskBar(),
+            TabBar(
+              indicatorColor: primaryClr,
+              labelColor: primaryClr,
+              unselectedLabelColor:
+                  Get.isDarkMode ? Colors.white70 : Colors.grey,
+              tabs: const [
+                Tab(text: 'Theo ngày'),
+                Tab(text: 'Tất cả'),
+                Tab(text: 'Thống kê'),
+              ],
+            ),
+            Expanded(
+              child: TabBarView(
+                children: [
+                  Column(
+                    children: [
+                      _addDateBar(),
+                      const SizedBox(height: 6),
+                      _showTasksForSelectedDate(),
+                    ],
+                  ),
+                  _showAllTasksTimeline(),
+                  DashboardPage(taskController: _taskController),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -172,70 +197,145 @@ class _HomePageState extends State<HomePage> {
     _taskController.getTasks();
   }
 
-  _showTasks() {
+  _showTasksForSelectedDate() {
     return Expanded(
       child: Obx(() {
-        if (_taskController.taskList.isEmpty) {
+        final filteredTasks = _taskController.taskList
+            .where((task) => _isTaskForSelectedDate(task))
+            .toList();
+
+        if (filteredTasks.isEmpty) {
           return _noTaskMsg();
-        } else {
-          return RefreshIndicator(
-            onRefresh: _onRefresh,
-            child: ListView.builder(
-              scrollDirection: SizeConfig.orientation == Orientation.landscape
-                  ? Axis.horizontal
-                  : Axis.vertical,
-              itemBuilder: (BuildContext context, int index) {
-                var task = _taskController.taskList[index];
+        }
 
-                if (task.repeat == 'Daily' ||
-                    task.date == DateFormat.yMd().format(_selectedDate) ||
-                    (task.repeat == 'Weekly' &&
-                        _selectedDate
-                                    .difference(
-                                        DateFormat.yMd().parse(task.date!))
-                                    .inDays %
-                                7 ==
-                            0) ||
-                    (task.repeat == 'Monthly' &&
-                        DateFormat.yMd().parse(task.date!).day ==
-                            _selectedDate.day)) {
-                  try {
-                  /*   var hour = task.startTime.toString().split(':')[0];
-                    var minutes = task.startTime.toString().split(':')[1]; */
-                    var date = DateFormat.jm().parse(task.startTime!);
-                    var myTime = DateFormat('HH:mm').format(date);
+        return RefreshIndicator(
+          onRefresh: _onRefresh,
+          child: ListView.builder(
+            scrollDirection: SizeConfig.orientation == Orientation.landscape
+                ? Axis.horizontal
+                : Axis.vertical,
+            itemBuilder: (BuildContext context, int index) {
+              var task = filteredTasks[index];
 
-                    notifyHelper.scheduledNotification(
-                      int.parse(myTime.toString().split(':')[0]),
-                      int.parse(myTime.toString().split(':')[1]),
-                      task,
-                    );
-                  } catch (e) {
-                    print('Error parsing time: $e');
-                  }
-                } else {
-                  Container();
-                }
-                return AnimationConfiguration.staggeredList(
-                  position: index,
-                  duration: const Duration(milliseconds: 1375),
-                  child: SlideAnimation(
-                    horizontalOffset: 300,
-                    child: FadeInAnimation(
-                      child: GestureDetector(
-                        onTap: () => _showBottomSheet(context, task),
-                        child: TaskTile(task),
-                      ),
+              _scheduleNotification(task);
+
+              return AnimationConfiguration.staggeredList(
+                position: index,
+                duration: const Duration(milliseconds: 1375),
+                child: SlideAnimation(
+                  horizontalOffset: 300,
+                  child: FadeInAnimation(
+                    child: GestureDetector(
+                      onTap: () => _showBottomSheet(context, task),
+                      child: TaskTile(task),
                     ),
                   ),
-                );
-              },
-              itemCount: _taskController.taskList.length,
-            ),
-          );
-        }
+                ),
+              );
+            },
+            itemCount: filteredTasks.length,
+          ),
+        );
       }),
     );
+  }
+
+  bool _isTaskForSelectedDate(Task task) {
+    if (task.date == null || task.startTime == null) return false;
+
+    final formattedSelected = DateFormat.yMd().format(_selectedDate);
+    if (task.repeat == 'Daily') {
+      return true;
+    }
+
+    if (task.date == formattedSelected) {
+      return true;
+    }
+
+    final taskDate = DateFormat.yMd().parse(task.date!);
+    if (task.repeat == 'Weekly' &&
+        _selectedDate.difference(taskDate).inDays % 7 == 0) {
+      return true;
+    }
+
+    if (task.repeat == 'Monthly' && taskDate.day == _selectedDate.day) {
+      return true;
+    }
+
+    return false;
+  }
+
+  void _scheduleNotification(Task task) {
+    try {
+      var date = DateFormat.jm().parse(task.startTime!);
+      var myTime = DateFormat('HH:mm').format(date);
+
+      notifyHelper.scheduledNotification(
+        int.parse(myTime.toString().split(':')[0]),
+        int.parse(myTime.toString().split(':')[1]),
+        task,
+      );
+    } catch (e) {
+      print('Error parsing time: $e');
+    }
+  }
+
+  Widget _showAllTasksTimeline() {
+    return Obx(() {
+      final tasks = [..._taskController.taskList];
+      tasks.sort((a, b) {
+        final aDate = _toTaskDateTime(a);
+        final bDate = _toTaskDateTime(b);
+        return aDate.compareTo(bDate);
+      });
+
+      if (tasks.isEmpty) {
+        return _noTaskMsg();
+      }
+
+      return RefreshIndicator(
+        onRefresh: _onRefresh,
+        child: ListView.builder(
+          itemCount: tasks.length,
+          itemBuilder: (context, index) {
+            final task = tasks[index];
+            return AnimationConfiguration.staggeredList(
+              position: index,
+              duration: const Duration(milliseconds: 1375),
+              child: SlideAnimation(
+                horizontalOffset: 300,
+                child: FadeInAnimation(
+                  child: GestureDetector(
+                    onTap: () => _showBottomSheet(context, task),
+                    child: TaskTile(task),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    });
+  }
+
+  DateTime _toTaskDateTime(Task task) {
+    try {
+      final date = task.date != null
+          ? DateFormat.yMd().parse(task.date!)
+          : DateTime.now();
+      final time = task.startTime != null
+          ? DateFormat.jm().parse(task.startTime!)
+          : DateTime.now();
+      return DateTime(
+        date.year,
+        date.month,
+        date.day,
+        time.hour,
+        time.minute,
+      );
+    } catch (e) {
+      return DateTime.now();
+    }
   }
 
   _noTaskMsg() {
