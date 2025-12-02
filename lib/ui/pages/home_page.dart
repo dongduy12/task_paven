@@ -14,6 +14,7 @@ import '../../models/task.dart';
 import '../../services/notification_services.dart';
 import '../size_config.dart';
 import 'assistant_page.dart';
+import 'dashboard_page.dart';
 import '../theme.dart';
 
 class HomePage extends StatefulWidget {
@@ -42,7 +43,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     SizeConfig().init(context);
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         // ignore: deprecated_member_use
         backgroundColor: context.theme.colorScheme.background,
@@ -58,6 +59,7 @@ class _HomePageState extends State<HomePage> {
               tabs: const [
                 Tab(text: 'Theo ngày'),
                 Tab(text: 'Tất cả'),
+                Tab(text: 'Thống kê'),
               ],
             ),
             Expanded(
@@ -71,6 +73,7 @@ class _HomePageState extends State<HomePage> {
                     ],
                   ),
                   _showAllTasksTimeline(),
+                  DashboardPage(taskController: _taskController),
                 ],
               ),
             ),
