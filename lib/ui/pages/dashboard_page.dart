@@ -369,14 +369,27 @@ class _Bar extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) {
           const labelSpacing = 8.0;
-          const labelHeight = 38.0; // rough space for top & bottom labels
-          final barAreaHeight = max(0.0, constraints.maxHeight - (labelHeight + labelSpacing * 2));
+
+          final labelPainter = TextPainter(
+            text: TextSpan(text: bucket.label, style: subTitleStyle),
+            maxLines: 1,
+            textDirection: TextDirection.ltr,
+          )..layout(maxWidth: constraints.maxWidth);
+
+          final totalPainter = TextPainter(
+            text: TextSpan(text: bucket.total.toString(), style: bodyStyle),
+            maxLines: 1,
+            textDirection: TextDirection.ltr,
+          )..layout(maxWidth: constraints.maxWidth);
+
+          final reservedHeight =
+              labelPainter.height + totalPainter.height + (labelSpacing * 2);
+          final barAreaHeight = max(0.0, constraints.maxHeight - reservedHeight);
 
           final completedHeight = (bucket.completed / maxValue) * barAreaHeight;
           final pendingHeight = (bucket.pending / maxValue) * barAreaHeight;
 
           return Column(
-            mainAxisAlignment: MainAxisAlignment.end,
             children: [
               Text(
                 bucket.label,
@@ -384,32 +397,34 @@ class _Bar extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: labelSpacing),
-              SizedBox(
-                height: barAreaHeight,
+              Expanded(
                 child: Align(
                   alignment: Alignment.bottomCenter,
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      if (pendingHeight > 0)
-                        Container(
-                          height: pendingHeight,
-                          decoration: BoxDecoration(
-                            color: Colors.orangeAccent.withOpacity(0.8),
-                            borderRadius: BorderRadius.circular(8),
+                  child: SizedBox(
+                    height: barAreaHeight,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        if (pendingHeight > 0)
+                          Container(
+                            height: pendingHeight,
+                            decoration: BoxDecoration(
+                              color: Colors.orangeAccent.withOpacity(0.8),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
-                        ),
-                      if (pendingHeight > 0 && completedHeight > 0)
-                        const SizedBox(height: 4),
-                      if (completedHeight > 0)
-                        Container(
-                          height: completedHeight,
-                          decoration: BoxDecoration(
-                            color: primaryClr,
-                            borderRadius: BorderRadius.circular(8),
+                        if (pendingHeight > 0 && completedHeight > 0)
+                          const SizedBox(height: 4),
+                        if (completedHeight > 0)
+                          Container(
+                            height: completedHeight,
+                            decoration: BoxDecoration(
+                              color: primaryClr,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
