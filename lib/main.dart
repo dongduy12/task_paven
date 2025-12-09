@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:task_paven/localization/app_translations.dart';
 import 'package:task_paven/services/theme_services.dart';
 import 'package:task_paven/ui/pages/home_page.dart';
@@ -11,8 +12,16 @@ import 'db/db_helper.dart';
 //future
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting();
   await DBHelper.initDb();
   await GetStorage.init();
+  final savedLocaleCode = GetStorage().read<String>('language_code');
+  final deviceLocaleCode = Get.deviceLocale?.languageCode;
+
+  // Ensure locale-specific date data is ready for whichever language is active.
+  if ((savedLocaleCode ?? deviceLocaleCode) != null) {
+    await initializeDateFormatting(savedLocaleCode ?? deviceLocaleCode);
+  }
   runApp(MyApp());
 }
 
