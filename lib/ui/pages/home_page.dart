@@ -55,6 +55,8 @@ class _HomePageState extends State<HomePage> {
         // ignore: deprecated_member_use
         backgroundColor: context.theme.colorScheme.background,
         appBar: _customAppBar(),
+        floatingActionButton: _buildAssistantButton(),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         body: Column(
           children: [
             _addTaskBar(),
@@ -108,11 +110,6 @@ class _HomePageState extends State<HomePage> {
       // ignore: deprecated_member_use
       backgroundColor: context.theme.colorScheme.background,
       actions: [
-        IconButton(
-          icon: Icon(Icons.chat_bubble_outline,
-              size: 24, color: Get.isDarkMode ? Colors.white : darkGreyClr),
-          onPressed: () => Get.to(() => const GeminiAssistantPage()),
-        ),
         IconButton(
           icon: Icon(Icons.cleaning_services_outlined,
               size: 24, color: Get.isDarkMode ? Colors.white : darkGreyClr),
@@ -218,6 +215,18 @@ class _HomePageState extends State<HomePage> {
     Get.updateLocale(Locale(code));
     Intl.defaultLocale = code;
     _settingsBox.write('language_code', code);
+  }
+
+  Widget _buildAssistantButton() {
+    return FloatingActionButton(
+      onPressed: () => Get.to(() => const GeminiAssistantPage()),
+      backgroundColor: primaryClr,
+      child: SvgPicture.asset(
+        'images/chatbot.svg',
+        width: 26,
+        height: 26,
+      ),
+    );
   }
 
   _addTaskBar() {

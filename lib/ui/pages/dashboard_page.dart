@@ -364,51 +364,63 @@ class _Bar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const maxHeight = 160.0;
-    final completedHeight = (bucket.completed / maxValue) * maxHeight;
-    final pendingHeight = (bucket.pending / maxValue) * maxHeight;
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 6),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Text(bucket.label, style: subTitleStyle),
-          const SizedBox(height: 8),
-          Expanded(
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  if (pendingHeight > 0)
-                    Container(
-                      height: pendingHeight,
-                      decoration: BoxDecoration(
-                        color: Colors.orangeAccent.withOpacity(0.8),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  if (pendingHeight > 0 && completedHeight > 0)
-                    const SizedBox(height: 4),
-                  if (completedHeight > 0)
-                    Container(
-                      height: completedHeight,
-                      decoration: BoxDecoration(
-                        color: primaryClr,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          const labelSpacing = 8.0;
+          const labelHeight = 38.0; // rough space for top & bottom labels
+          final barAreaHeight = max(0.0, constraints.maxHeight - (labelHeight + labelSpacing * 2));
+
+          final completedHeight = (bucket.completed / maxValue) * barAreaHeight;
+          final pendingHeight = (bucket.pending / maxValue) * barAreaHeight;
+
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Text(
+                bucket.label,
+                style: subTitleStyle,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            bucket.total.toString(),
-            style: bodyStyle,
-          ),
-        ],
+              const SizedBox(height: labelSpacing),
+              SizedBox(
+                height: barAreaHeight,
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      if (pendingHeight > 0)
+                        Container(
+                          height: pendingHeight,
+                          decoration: BoxDecoration(
+                            color: Colors.orangeAccent.withOpacity(0.8),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      if (pendingHeight > 0 && completedHeight > 0)
+                        const SizedBox(height: 4),
+                      if (completedHeight > 0)
+                        Container(
+                          height: completedHeight,
+                          decoration: BoxDecoration(
+                            color: primaryClr,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: labelSpacing),
+              Text(
+                bucket.total.toString(),
+                style: bodyStyle,
+              ),
+            ],
+          );
+        },
       ),
     );
   }
