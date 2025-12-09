@@ -145,60 +145,61 @@ class _HomePageState extends State<HomePage> {
         final theme = Theme.of(context);
         final textTheme = theme.textTheme;
 
+        final sheetHeight = MediaQuery.of(context).size.height * 0.5;
+
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 520),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 48,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.onBackground.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(12),
+                child: SizedBox(
+                  height: sheetHeight,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.max,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 48,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.onBackground.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      'account_settings_title'.tr,
-                      style: textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
+                      const SizedBox(height: 14),
+                      Text(
+                        'account_settings_title'.tr,
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'account_settings_subtitle'.tr,
-                      style: textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: 14),
-                    Column(
-                      children: [
-                        _LanguageSelectTile(
-                          selectedCode: _selectedLanguageCode,
-                          onChanged: _updateLanguage,
-                        ),
-                        const SizedBox(height: 12),
-                        _ProfileActionTile(
-                          icon: Icons.privacy_tip_outlined,
-                          title: 'privacy_item_title'.tr,
-                          subtitle: 'privacy_item_subtitle'.tr,
-                          selected: false,
-                          onTap: () {
-                            Navigator.pop(context);
-                            Get.to(() => const PrivacyPolicyPage());
-                          },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                  ],
+                      const SizedBox(height: 6),
+                      Text(
+                        'account_settings_subtitle'.tr,
+                        style: textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: 18),
+                      _LanguageSelectTile(
+                        selectedCode: _selectedLanguageCode,
+                        onChanged: _updateLanguage,
+                      ),
+                      const Spacer(),
+                      _ProfileActionTile(
+                        icon: Icons.privacy_tip_outlined,
+                        title: 'privacy_item_title'.tr,
+                        subtitle: 'privacy_item_subtitle'.tr,
+                        selected: false,
+                        onTap: () {
+                          Navigator.pop(context);
+                          Get.to(() => const PrivacyPolicyPage());
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+                  ),
                 ),
               ),
             ),
