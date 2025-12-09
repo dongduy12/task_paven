@@ -9,11 +9,11 @@ import 'package:task_paven/services/theme_services.dart';
 import 'package:task_paven/ui/pages/add_task_page.dart';
 import 'package:task_paven/ui/widgets/button.dart';
 import 'package:task_paven/ui/widgets/task_tile.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../controllers/task_controller.dart';
 import '../../models/task.dart';
 import '../../services/notification_services.dart';
 import '../size_config.dart';
-import 'privacy_policy_page.dart';
 import 'assistant_page.dart';
 import 'dashboard_page.dart';
 import '../theme.dart';
@@ -194,7 +194,7 @@ class _HomePageState extends State<HomePage> {
                         selected: false,
                         onTap: () {
                           Navigator.pop(context);
-                          Get.to(() => const PrivacyPolicyPage());
+                          _openPrivacyPolicyLink();
                         },
                       ),
                       const SizedBox(height: 10),
@@ -216,6 +216,15 @@ class _HomePageState extends State<HomePage> {
     Get.updateLocale(Locale(code));
     Intl.defaultLocale = code;
     _settingsBox.write('language_code', code);
+  }
+
+  Future<void> _openPrivacyPolicyLink() async {
+    const url =
+        'https://sites.google.com/view/privacy-policy-plan-up/trang-ch%E1%BB%A7';
+    await launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.externalApplication,
+    );
   }
 
   Widget _buildAssistantButton() {
