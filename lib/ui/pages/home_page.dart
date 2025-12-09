@@ -17,6 +17,7 @@ import 'privacy_policy_page.dart';
 import 'assistant_page.dart';
 import 'dashboard_page.dart';
 import '../theme.dart';
+import 'package:get_storage/get_storage.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -27,8 +28,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late NotifyHelper notifyHelper;
-  String _selectedLanguageCode =
-      Get.deviceLocale?.languageCode == 'vi' ? 'vi' : 'en';
+  final _settingsBox = GetStorage();
+  late String _selectedLanguageCode;
 
   @override
   void initState() {
@@ -36,6 +37,9 @@ class _HomePageState extends State<HomePage> {
     notifyHelper = NotifyHelper();
     notifyHelper.requestIOSPermissions();
     notifyHelper.initializeNotification();
+    _selectedLanguageCode =
+        _settingsBox.read<String>('language_code') ?? Get.locale?.languageCode ?? 'en';
+    Intl.defaultLocale = _selectedLanguageCode;
     _taskController.getTasks();
   }
 
@@ -59,10 +63,10 @@ class _HomePageState extends State<HomePage> {
               labelColor: primaryClr,
               unselectedLabelColor:
                   Get.isDarkMode ? Colors.white70 : Colors.grey,
-              tabs: const [
-                Tab(text: 'Theo ngày'),
-                Tab(text: 'Tất cả'),
-                Tab(text: 'Thống kê'),
+              tabs: [
+                Tab(text: 'tab_by_day'.tr),
+                Tab(text: 'tab_all'.tr),
+                Tab(text: 'tab_stats'.tr),
               ],
             ),
             Expanded(
@@ -166,39 +170,29 @@ class _HomePageState extends State<HomePage> {
                     ),
                     const SizedBox(height: 14),
                     Text(
-                      'Cài đặt tài khoản',
+                      'account_settings_title'.tr,
                       style: textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      'Tuỳ chỉnh ngôn ngữ và xem chính sách của ứng dụng.',
+                      'account_settings_subtitle'.tr,
                       style: textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 14),
-                    Wrap(
-                      runSpacing: 12,
-                      spacing: 12,
+                    Column(
                       children: [
-                        _ProfileActionTile(
-                          icon: Icons.language,
-                          title: 'Tiếng Việt',
-                          subtitle: 'Hiển thị nội dung bằng tiếng Việt',
-                          selected: _selectedLanguageCode == 'vi',
-                          onTap: () => _updateLanguage('vi'),
+                        _LanguageSelectTile(
+                          selectedCode: _selectedLanguageCode,
+                          onChanged: _updateLanguage,
                         ),
-                        _ProfileActionTile(
-                          icon: Icons.translate,
-                          title: 'English',
-                          subtitle: 'Show the app content in English',
-                          selected: _selectedLanguageCode == 'en',
-                          onTap: () => _updateLanguage('en'),
-                        ),
+                        const SizedBox(height: 12),
                         _ProfileActionTile(
                           icon: Icons.privacy_tip_outlined,
-                          title: 'Chính sách & Quyền riêng tư',
-                          subtitle: 'Xem thêm về điều khoản sử dụng',
+                          title: 'privacy_item_title'.tr,
+                          subtitle: 'privacy_item_subtitle'.tr,
+                          selected: false,
                           onTap: () {
                             Navigator.pop(context);
                             Get.to(() => const PrivacyPolicyPage());
@@ -222,6 +216,8 @@ class _HomePageState extends State<HomePage> {
       _selectedLanguageCode = code;
     });
     Get.updateLocale(Locale(code));
+    Intl.defaultLocale = code;
+    _settingsBox.write('language_code', code);
   }
 
   _addTaskBar() {
@@ -238,13 +234,13 @@ class _HomePageState extends State<HomePage> {
                 style: subHeadingStyle,
               ),
               Text(
-                'Today',
+                'today_label'.tr,
                 style: subHeadingStyle,
               ),
             ],
           ),
           MyButton(
-              label: '+ Add Task',
+              label: '+ ${'add_task'.tr}',
               onTap: () async {
                 await Get.to(() => const AddTaskPage());
                 _taskController.getTasks();
@@ -437,56 +433,45 @@ class _HomePageState extends State<HomePage> {
   }
 
   _noTaskMsg() {
-    return Stack(
-      children: [
-        AnimatedPositioned(
-          duration: const Duration(milliseconds: 2000),
-          child: RefreshIndicator(
-            onRefresh: _onRefresh,
-            child: SingleChildScrollView(
-              child: Wrap(
-                alignment: WrapAlignment.center,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                direction: SizeConfig.orientation == Orientation.landscape
-                    ? Axis.horizontal
-                    : Axis.vertical,
+    return RefreshIndicator(
+      onRefresh: _onRefresh,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: SizeConfig.screenHeight * 0.55,
+          ),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  SizeConfig.orientation == Orientation.landscape
-                      ? const SizedBox(
-                          height: 6,
-                        )
-                      : const SizedBox(
-                          height: 220,
-                        ),
                   SvgPicture.asset(
                     'images/task.svg',
                     // ignore: deprecated_member_use
                     color: primaryClr.withOpacity(0.5),
-                    height: 90,
+                    height: 96,
                     semanticsLabel: 'Task',
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 30, vertical: 10),
-                    child: Text(
-                      'You do not have any tasks yet!\nAdd new tasks to make your days productive.',
-                      style: subTitleStyle,
-                      textAlign: TextAlign.center,
-                    ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'no_tasks_title'.tr,
+                    style: subHeadingStyle,
+                    textAlign: TextAlign.center,
                   ),
-                  SizeConfig.orientation == Orientation.landscape
-                      ? const SizedBox(
-                          height: 120,
-                        )
-                      : const SizedBox(
-                          height: 180,
-                        ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'no_tasks_subtitle'.tr,
+                    style: subTitleStyle,
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
             ),
           ),
-        )
-      ],
+        ),
+      ),
     );
   }
 
@@ -519,7 +504,7 @@ class _HomePageState extends State<HomePage> {
             task.isCompleted == 1
                 ? Container()
                 : _buildBottomSheet(
-                    label: 'Task Completed',
+                    label: 'task_completed'.tr,
                     onTap: () {
                       NotifyHelper().cancelNotification(task);
                       _taskController.markTaskAsCompleted(task.id!);
@@ -527,7 +512,7 @@ class _HomePageState extends State<HomePage> {
                     },
                     clr: primaryClr),
             _buildBottomSheet(
-                label: 'Delete Task',
+                label: 'delete_task'.tr,
                 onTap: () {
                   NotifyHelper().cancelNotification(task);
                   _taskController.deleteTasks(task);
@@ -536,7 +521,7 @@ class _HomePageState extends State<HomePage> {
                 clr: Colors.red[300]!),
             Divider(color: Get.isDarkMode ? Colors.grey : darkGreyClr),
             _buildBottomSheet(
-                label: 'Cancel',
+                label: 'cancel'.tr,
                 onTap: () {
                   Get.back();
                 },
@@ -579,6 +564,84 @@ class _HomePageState extends State<HomePage> {
                 isClose ? titleStyle : titleStyle.copyWith(color: Colors.white),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _LanguageSelectTile extends StatelessWidget {
+  const _LanguageSelectTile({
+    required this.selectedCode,
+    required this.onChanged,
+  });
+
+  final String selectedCode;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceVariant.withOpacity(0.4),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.primary.withOpacity(0.12)),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              Icons.language,
+              color: colorScheme.primary,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'language_select_label'.tr,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'language_select_hint'.tr,
+                  style: theme.textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          DropdownButton<String>(
+            value: selectedCode,
+            underline: const SizedBox.shrink(),
+            items: [
+              DropdownMenuItem(
+                value: 'vi',
+                child: Text('language_vi'.tr),
+              ),
+              DropdownMenuItem(
+                value: 'en',
+                child: Text('language_en'.tr),
+              ),
+            ],
+            onChanged: (value) {
+              if (value != null) onChanged(value);
+            },
+          )
+        ],
       ),
     );
   }
