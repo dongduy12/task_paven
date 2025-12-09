@@ -370,16 +370,18 @@ class _Bar extends StatelessWidget {
         builder: (context, constraints) {
           const labelSpacing = 8.0;
 
+          final textDirection = Directionality.of(context);
+
           final labelPainter = TextPainter(
             text: TextSpan(text: bucket.label, style: subTitleStyle),
             maxLines: 1,
-            textDirection: TextDirection.ltr,
+            textDirection: textDirection,
           )..layout(maxWidth: constraints.maxWidth);
 
           final totalPainter = TextPainter(
             text: TextSpan(text: bucket.total.toString(), style: bodyStyle),
             maxLines: 1,
-            textDirection: TextDirection.ltr,
+            textDirection: textDirection,
           )..layout(maxWidth: constraints.maxWidth);
 
           final reservedHeight =
