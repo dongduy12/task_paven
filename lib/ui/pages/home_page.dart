@@ -13,6 +13,7 @@ import '../../controllers/task_controller.dart';
 import '../../models/task.dart';
 import '../../services/notification_services.dart';
 import '../size_config.dart';
+import 'privacy_policy_page.dart';
 import 'assistant_page.dart';
 import 'dashboard_page.dart';
 import '../theme.dart';
@@ -26,6 +27,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late NotifyHelper notifyHelper;
+  String _selectedLanguageCode =
+      Get.deviceLocale?.languageCode == 'vi' ? 'vi' : 'en';
 
   @override
   void initState() {
@@ -114,16 +117,111 @@ class _HomePageState extends State<HomePage> {
             _taskController.deleteAllTasks();
           },
         ),
-        const CircleAvatar(
-          backgroundImage: AssetImage('images/person.jpeg'),
-          radius: 18,
+        GestureDetector(
+          onTap: _showProfileMenu,
+          child: const CircleAvatar(
+            backgroundImage: AssetImage('images/person.jpeg'),
+            radius: 18,
+          ),
         ),
         const SizedBox(
-          width: 20,
+          width: 12,
         ),
       ],
       centerTitle: true,
     );
+  }
+
+  void _showProfileMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.theme.colorScheme.background,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      isScrollControlled: true,
+      builder: (context) {
+        final theme = Theme.of(context);
+        final textTheme = theme.textTheme;
+
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 48,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.onBackground.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    Text(
+                      'Cài đặt tài khoản',
+                      style: textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Tuỳ chỉnh ngôn ngữ và xem chính sách của ứng dụng.',
+                      style: textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 14),
+                    Wrap(
+                      runSpacing: 12,
+                      spacing: 12,
+                      children: [
+                        _ProfileActionTile(
+                          icon: Icons.language,
+                          title: 'Tiếng Việt',
+                          subtitle: 'Hiển thị nội dung bằng tiếng Việt',
+                          selected: _selectedLanguageCode == 'vi',
+                          onTap: () => _updateLanguage('vi'),
+                        ),
+                        _ProfileActionTile(
+                          icon: Icons.translate,
+                          title: 'English',
+                          subtitle: 'Show the app content in English',
+                          selected: _selectedLanguageCode == 'en',
+                          onTap: () => _updateLanguage('en'),
+                        ),
+                        _ProfileActionTile(
+                          icon: Icons.privacy_tip_outlined,
+                          title: 'Chính sách & Quyền riêng tư',
+                          subtitle: 'Xem thêm về điều khoản sử dụng',
+                          onTap: () {
+                            Navigator.pop(context);
+                            Get.to(() => const PrivacyPolicyPage());
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _updateLanguage(String code) {
+    setState(() {
+      _selectedLanguageCode = code;
+    });
+    Get.updateLocale(Locale(code));
   }
 
   _addTaskBar() {
@@ -480,6 +578,96 @@ class _HomePageState extends State<HomePage> {
             style:
                 isClose ? titleStyle : titleStyle.copyWith(color: Colors.white),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileActionTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _ProfileActionTile({
+    Key? key,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.selected = false,
+    required this.onTap,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Ink(
+        width: 230,
+        decoration: BoxDecoration(
+          color: selected
+              ? colorScheme.primary.withOpacity(0.08)
+              : colorScheme.surfaceVariant.withOpacity(0.4),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: selected ? colorScheme.primary : Colors.transparent,
+            width: 1.2,
+          ),
+        ),
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: colorScheme.primary.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                color: colorScheme.primary,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      if (selected)
+                        Icon(
+                          Icons.check_circle,
+                          color: colorScheme.primary,
+                          size: 20,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
