@@ -9,6 +9,7 @@ import 'package:task_paven/services/theme_services.dart';
 import 'package:task_paven/ui/pages/add_task_page.dart';
 import 'package:task_paven/ui/widgets/button.dart';
 import 'package:task_paven/ui/widgets/task_tile.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../controllers/task_controller.dart';
 import '../../models/task.dart';
 import '../../services/notification_services.dart';
@@ -16,6 +17,7 @@ import '../size_config.dart';
 import 'assistant_page.dart';
 import 'dashboard_page.dart';
 import '../theme.dart';
+import 'package:get_storage/get_storage.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
@@ -26,6 +28,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   late NotifyHelper notifyHelper;
+  final _settingsBox = GetStorage();
+  late String _selectedLanguageCode;
 
   @override
   void initState() {
@@ -33,6 +37,9 @@ class _HomePageState extends State<HomePage> {
     notifyHelper = NotifyHelper();
     notifyHelper.requestIOSPermissions();
     notifyHelper.initializeNotification();
+    _selectedLanguageCode =
+        _settingsBox.read<String>('language_code') ?? Get.locale?.languageCode ?? 'en';
+    Intl.defaultLocale = _selectedLanguageCode;
     _taskController.getTasks();
   }
 
@@ -48,6 +55,8 @@ class _HomePageState extends State<HomePage> {
         // ignore: deprecated_member_use
         backgroundColor: context.theme.colorScheme.background,
         appBar: _customAppBar(),
+        floatingActionButton: _buildAssistantButton(),
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         body: Column(
           children: [
             _addTaskBar(),
@@ -56,10 +65,10 @@ class _HomePageState extends State<HomePage> {
               labelColor: primaryClr,
               unselectedLabelColor:
                   Get.isDarkMode ? Colors.white70 : Colors.grey,
-              tabs: const [
-                Tab(text: 'Theo ngày'),
-                Tab(text: 'Tất cả'),
-                Tab(text: 'Thống kê'),
+              tabs: [
+                Tab(text: 'tab_by_day'.tr),
+                Tab(text: 'tab_all'.tr),
+                Tab(text: 'tab_stats'.tr),
               ],
             ),
             Expanded(
@@ -102,11 +111,6 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: context.theme.colorScheme.background,
       actions: [
         IconButton(
-          icon: Icon(Icons.chat_bubble_outline,
-              size: 24, color: Get.isDarkMode ? Colors.white : darkGreyClr),
-          onPressed: () => Get.to(() => const GeminiAssistantPage()),
-        ),
-        IconButton(
           icon: Icon(Icons.cleaning_services_outlined,
               size: 24, color: Get.isDarkMode ? Colors.white : darkGreyClr),
           onPressed: () {
@@ -114,15 +118,124 @@ class _HomePageState extends State<HomePage> {
             _taskController.deleteAllTasks();
           },
         ),
-        const CircleAvatar(
-          backgroundImage: AssetImage('images/person.jpeg'),
-          radius: 18,
+        GestureDetector(
+          onTap: _showProfileMenu,
+          child: const CircleAvatar(
+            backgroundImage: AssetImage('images/person.jpeg'),
+            radius: 18,
+          ),
         ),
         const SizedBox(
-          width: 20,
+          width: 12,
         ),
       ],
       centerTitle: true,
+    );
+  }
+
+  void _showProfileMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: context.theme.colorScheme.background,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      isScrollControlled: true,
+      builder: (context) {
+        final theme = Theme.of(context);
+        final textTheme = theme.textTheme;
+
+        final sheetHeight = MediaQuery.of(context).size.height * 0.5;
+
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 520),
+                child: SizedBox(
+                  height: sheetHeight,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.max,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                        child: Container(
+                          width: 48,
+                          height: 4,
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.onBackground.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        'account_settings_title'.tr,
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'account_settings_subtitle'.tr,
+                        style: textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: 18),
+                      _LanguageSelectTile(
+                        selectedCode: _selectedLanguageCode,
+                        onChanged: _updateLanguage,
+                      ),
+                      const Spacer(),
+                      _ProfileActionTile(
+                        icon: Icons.privacy_tip_outlined,
+                        title: 'privacy_item_title'.tr,
+                        subtitle: 'privacy_item_subtitle'.tr,
+                        selected: false,
+                        onTap: () {
+                          Navigator.pop(context);
+                          _openPrivacyPolicyLink();
+                        },
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _updateLanguage(String code) {
+    setState(() {
+      _selectedLanguageCode = code;
+    });
+    Get.updateLocale(Locale(code));
+    Intl.defaultLocale = code;
+    _settingsBox.write('language_code', code);
+  }
+
+  Future<void> _openPrivacyPolicyLink() async {
+    const url =
+        'https://sites.google.com/view/privacy-policy-plan-up/trang-ch%E1%BB%A7';
+    await launchUrl(
+      Uri.parse(url),
+      mode: LaunchMode.externalApplication,
+    );
+  }
+
+  Widget _buildAssistantButton() {
+    return FloatingActionButton(
+      onPressed: () => Get.to(() => const GeminiAssistantPage()),
+      backgroundColor: primaryClr,
+      child: SvgPicture.asset(
+        'images/chatbot.svg',
+        width: 26,
+        height: 26,
+      ),
     );
   }
 
@@ -140,13 +253,13 @@ class _HomePageState extends State<HomePage> {
                 style: subHeadingStyle,
               ),
               Text(
-                'Today',
+                'today_label'.tr,
                 style: subHeadingStyle,
               ),
             ],
           ),
           MyButton(
-              label: '+ Add Task',
+              label: '+ ${'add_task'.tr}',
               onTap: () async {
                 await Get.to(() => const AddTaskPage());
                 _taskController.getTasks();
@@ -339,56 +452,45 @@ class _HomePageState extends State<HomePage> {
   }
 
   _noTaskMsg() {
-    return Stack(
-      children: [
-        AnimatedPositioned(
-          duration: const Duration(milliseconds: 2000),
-          child: RefreshIndicator(
-            onRefresh: _onRefresh,
-            child: SingleChildScrollView(
-              child: Wrap(
-                alignment: WrapAlignment.center,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                direction: SizeConfig.orientation == Orientation.landscape
-                    ? Axis.horizontal
-                    : Axis.vertical,
+    return RefreshIndicator(
+      onRefresh: _onRefresh,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: SizeConfig.screenHeight * 0.55,
+          ),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  SizeConfig.orientation == Orientation.landscape
-                      ? const SizedBox(
-                          height: 6,
-                        )
-                      : const SizedBox(
-                          height: 220,
-                        ),
                   SvgPicture.asset(
                     'images/task.svg',
                     // ignore: deprecated_member_use
                     color: primaryClr.withOpacity(0.5),
-                    height: 90,
+                    height: 96,
                     semanticsLabel: 'Task',
                   ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 30, vertical: 10),
-                    child: Text(
-                      'You do not have any tasks yet!\nAdd new tasks to make your days productive.',
-                      style: subTitleStyle,
-                      textAlign: TextAlign.center,
-                    ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'no_tasks_title'.tr,
+                    style: subHeadingStyle,
+                    textAlign: TextAlign.center,
                   ),
-                  SizeConfig.orientation == Orientation.landscape
-                      ? const SizedBox(
-                          height: 120,
-                        )
-                      : const SizedBox(
-                          height: 180,
-                        ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'no_tasks_subtitle'.tr,
+                    style: subTitleStyle,
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
             ),
           ),
-        )
-      ],
+        ),
+      ),
     );
   }
 
@@ -421,7 +523,7 @@ class _HomePageState extends State<HomePage> {
             task.isCompleted == 1
                 ? Container()
                 : _buildBottomSheet(
-                    label: 'Task Completed',
+                    label: 'task_completed'.tr,
                     onTap: () {
                       NotifyHelper().cancelNotification(task);
                       _taskController.markTaskAsCompleted(task.id!);
@@ -429,7 +531,7 @@ class _HomePageState extends State<HomePage> {
                     },
                     clr: primaryClr),
             _buildBottomSheet(
-                label: 'Delete Task',
+                label: 'delete_task'.tr,
                 onTap: () {
                   NotifyHelper().cancelNotification(task);
                   _taskController.deleteTasks(task);
@@ -438,7 +540,7 @@ class _HomePageState extends State<HomePage> {
                 clr: Colors.red[300]!),
             Divider(color: Get.isDarkMode ? Colors.grey : darkGreyClr),
             _buildBottomSheet(
-                label: 'Cancel',
+                label: 'cancel'.tr,
                 onTap: () {
                   Get.back();
                 },
@@ -480,6 +582,174 @@ class _HomePageState extends State<HomePage> {
             style:
                 isClose ? titleStyle : titleStyle.copyWith(color: Colors.white),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LanguageSelectTile extends StatelessWidget {
+  const _LanguageSelectTile({
+    required this.selectedCode,
+    required this.onChanged,
+  });
+
+  final String selectedCode;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceVariant.withOpacity(0.4),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colorScheme.primary.withOpacity(0.12)),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              Icons.language,
+              color: colorScheme.primary,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'language_select_label'.tr,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'language_select_hint'.tr,
+                  style: theme.textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          DropdownButton<String>(
+            value: selectedCode,
+            underline: const SizedBox.shrink(),
+            items: [
+              DropdownMenuItem(
+                value: 'vi',
+                child: Text('language_vi'.tr),
+              ),
+              DropdownMenuItem(
+                value: 'en',
+                child: Text('language_en'.tr),
+              ),
+            ],
+            onChanged: (value) {
+              if (value != null) onChanged(value);
+            },
+          )
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileActionTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _ProfileActionTile({
+    Key? key,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.selected = false,
+    required this.onTap,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Ink(
+        width: 230,
+        decoration: BoxDecoration(
+          color: selected
+              ? colorScheme.primary.withOpacity(0.08)
+              : colorScheme.surfaceVariant.withOpacity(0.4),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: selected ? colorScheme.primary : Colors.transparent,
+            width: 1.2,
+          ),
+        ),
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: colorScheme.primary.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                color: colorScheme.primary,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      if (selected)
+                        Icon(
+                          Icons.check_circle,
+                          color: colorScheme.primary,
+                          size: 20,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

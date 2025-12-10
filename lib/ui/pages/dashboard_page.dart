@@ -41,7 +41,7 @@ class _DashboardPageState extends State<DashboardPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Tổng quan', style: headingStyle),
+              Text('dashboard_overview'.tr, style: headingStyle),
               const SizedBox(height: 12),
               _SummaryGrid(
                 completed: completed,
@@ -56,7 +56,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 Padding(
                   padding: const EdgeInsets.only(top: 12),
                   child: Text(
-                    'Chưa có nhiệm vụ nào, hãy thêm nhiệm vụ để theo dõi tiến độ.',
+                    'dashboard_empty'.tr,
                     style: subTitleStyle,
                   ),
                 ),
@@ -68,25 +68,27 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   Widget _buildRangeSelector() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           _range == _StatsRange.week
-              ? 'Hiệu suất theo tuần này'
-              : 'Hiệu suất theo tháng này',
+              ? 'dashboard_performance_week'.tr
+              : 'dashboard_performance_month'.tr,
           style: titleStyle,
         ),
+        const SizedBox(height: 8),
         Wrap(
           spacing: 8,
+          runSpacing: 8,
           children: [
             ChoiceChip(
-              label: const Text('Tuần'),
+              label: Text('dashboard_week'.tr),
               selected: _range == _StatsRange.week,
               onSelected: (_) => setState(() => _range = _StatsRange.week),
             ),
             ChoiceChip(
-              label: const Text('Tháng'),
+              label: Text('dashboard_month'.tr),
               selected: _range == _StatsRange.month,
               onSelected: (_) => setState(() => _range = _StatsRange.month),
             ),
@@ -110,7 +112,10 @@ class _DashboardPageState extends State<DashboardPage> {
   List<_ChartBucket> _weeklyBuckets(List<Task> tasks) {
     final now = DateTime.now();
     final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-    final labels = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+    final isVietnamese = (Get.locale?.languageCode ?? 'en') == 'vi';
+    final labels = isVietnamese
+        ? ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']
+        : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
     return List.generate(7, (index) {
       final day = _asDate(startOfWeek.add(Duration(days: index)));
@@ -129,7 +134,9 @@ class _DashboardPageState extends State<DashboardPage> {
     final startOfMonth = DateTime(now.year, now.month, 1);
     final endOfMonth = DateTime(now.year, now.month + 1, 0);
     final totalDays = endOfMonth.day;
-    final buckets = List.generate(5, (index) => _ChartBucket('Tuần ${index + 1}', 0, 0));
+    final weekLabel = 'dashboard_week'.tr;
+    final buckets =
+        List.generate(5, (index) => _ChartBucket('$weekLabel ${index + 1}', 0, 0));
 
     for (int day = 0; day < totalDays; day++) {
       final date = _asDate(startOfMonth.add(Duration(days: day)));
@@ -203,7 +210,7 @@ class _SummaryGrid extends StatelessWidget {
           children: [
             Expanded(
               child: _StatCard(
-                title: 'Hoàn thành',
+                title: 'summary_completed'.tr,
                 value: completed,
                 icon: Icons.check_circle_outline,
                 color: primaryClr,
@@ -213,7 +220,7 @@ class _SummaryGrid extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: _StatCard(
-                title: 'Chưa hoàn thành',
+                title: 'summary_pending'.tr,
                 value: pending,
                 icon: Icons.pending_actions_outlined,
                 color: Colors.orangeAccent,
@@ -224,7 +231,7 @@ class _SummaryGrid extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         _StatCard(
-          title: 'Nhiệm vụ quá hạn',
+          title: 'summary_overdue'.tr,
           value: overdue,
           icon: Icons.warning_amber_rounded,
           color: Colors.redAccent,
@@ -357,51 +364,80 @@ class _Bar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const maxHeight = 160.0;
-    final completedHeight = (bucket.completed / maxValue) * maxHeight;
-    final pendingHeight = (bucket.pending / maxValue) * maxHeight;
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 6),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Text(bucket.label, style: subTitleStyle),
-          const SizedBox(height: 8),
-          Expanded(
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  if (pendingHeight > 0)
-                    Container(
-                      height: pendingHeight,
-                      decoration: BoxDecoration(
-                        color: Colors.orangeAccent.withOpacity(0.8),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  if (pendingHeight > 0 && completedHeight > 0)
-                    const SizedBox(height: 4),
-                  if (completedHeight > 0)
-                    Container(
-                      height: completedHeight,
-                      decoration: BoxDecoration(
-                        color: primaryClr,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          const labelSpacing = 8.0;
+
+          final textDirection = Directionality.of(context);
+
+          final labelPainter = TextPainter(
+            text: TextSpan(text: bucket.label, style: subTitleStyle),
+            maxLines: 1,
+            textDirection: textDirection,
+          )..layout(maxWidth: constraints.maxWidth);
+
+          final totalPainter = TextPainter(
+            text: TextSpan(text: bucket.total.toString(), style: bodyStyle),
+            maxLines: 1,
+            textDirection: textDirection,
+          )..layout(maxWidth: constraints.maxWidth);
+
+          final reservedHeight =
+              labelPainter.height + totalPainter.height + (labelSpacing * 2);
+          final barAreaHeight = max(0.0, constraints.maxHeight - reservedHeight);
+
+          final completedHeight = (bucket.completed / maxValue) * barAreaHeight;
+          final pendingHeight = (bucket.pending / maxValue) * barAreaHeight;
+
+          return Column(
+            children: [
+              Text(
+                bucket.label,
+                style: subTitleStyle,
+                overflow: TextOverflow.ellipsis,
               ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            bucket.total.toString(),
-            style: bodyStyle,
-          ),
-        ],
+              const SizedBox(height: labelSpacing),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.bottomCenter,
+                  child: SizedBox(
+                    height: barAreaHeight,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        if (pendingHeight > 0)
+                          Container(
+                            height: pendingHeight,
+                            decoration: BoxDecoration(
+                              color: Colors.orangeAccent.withOpacity(0.8),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        if (pendingHeight > 0 && completedHeight > 0)
+                          const SizedBox(height: 4),
+                        if (completedHeight > 0)
+                          Container(
+                            height: completedHeight,
+                            decoration: BoxDecoration(
+                              color: primaryClr,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: labelSpacing),
+              Text(
+                bucket.total.toString(),
+                style: bodyStyle,
+              ),
+            ],
+          );
+        },
       ),
     );
   }
