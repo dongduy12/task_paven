@@ -5,6 +5,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:task_paven/localization/app_translations.dart';
 import 'package:task_paven/services/theme_services.dart';
 import 'package:task_paven/ui/pages/home_page.dart';
+import 'package:task_paven/ui/pages/onboarding_page.dart';
 import 'package:task_paven/ui/theme.dart';
 
 import 'db/db_helper.dart';
@@ -40,6 +41,8 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasCompletedOnboarding = _storage.read<bool>('onboarding_completed') ?? false;
+
     return GetMaterialApp(
       theme: Themes.light,
       darkTheme: Themes.dark,
@@ -49,7 +52,7 @@ class MyApp extends StatelessWidget {
       fallbackLocale: const Locale('en'),
       title: 'Task Paven',
       debugShowCheckedModeBanner: false,
-      home: const HomePage(),
+      home: hasCompletedOnboarding ? const HomePage() : const OnboardingPage(),
     );
   }
 }

@@ -346,18 +346,43 @@ class _GeminiAssistantPageState extends State<GeminiAssistantPage> {
 
   Future<void> _handleTaskCommands(String userInput) async {
     final normalized = userInput.toLowerCase();
-    if (normalized.contains('thêm nhiệm vụ') || normalized.contains('tạo nhiệm vụ')) {
-      final title = _extractTitle(userInput, ['thêm nhiệm vụ', 'tạo nhiệm vụ']);
+    final creationKeywords = [
+      'thêm nhiệm vụ',
+      'tạo nhiệm vụ',
+      'add task',
+      'create task',
+    ];
+
+    if (creationKeywords.any(normalized.contains)) {
+      final title = _extractTitle(userInput, creationKeywords);
       if (title != null && title.isNotEmpty) {
         final scheduledStart = _parseScheduledStart(userInput);
-        await _taskController
-            .addTask(task: _buildTaskFromInput(title, scheduledStart));
-        final dateText = DateFormat.yMd().format(scheduledStart);
-        final timeText = DateFormat('HH:mm').format(scheduledStart);
-        await _addMessage(AssistantMessage(
-          text: 'Đã thêm nhiệm vụ "$title" vào ngày $dateText lúc $timeText.',
-          isUser: false,
-        ));
+        final newTask = _buildTaskFromInput(title, scheduledStart);
+
+        try {
+          final id = await _taskController.addTask(task: newTask);
+          if (id > 0 && id != 9000) {
+            final dateText = DateFormat.yMd().format(scheduledStart);
+            final timeText = DateFormat('HH:mm').format(scheduledStart);
+            await _addMessage(AssistantMessage(
+              text:
+                  'Đã thêm nhiệm vụ "$title" vào ngày $dateText lúc $timeText.',
+              isUser: false,
+            ));
+          } else {
+            await _addMessage(const AssistantMessage(
+              text:
+                  'Không thể thêm nhiệm vụ mới từ Gemini. Vui lòng kiểm tra lại dữ liệu hoặc khởi động lại ứng dụng.',
+              isUser: false,
+            ));
+          }
+        } catch (error) {
+          await _addMessage(AssistantMessage(
+            text:
+                'Không thể lưu nhiệm vụ do lỗi cơ sở dữ liệu: ${error.toString()}',
+            isUser: false,
+          ));
+        }
       }
     }
 

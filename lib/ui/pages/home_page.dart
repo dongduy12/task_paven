@@ -379,18 +379,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _scheduleNotification(Task task) {
-    try {
-      var date = DateFormat.jm().parse(task.startTime!);
-      var myTime = DateFormat('HH:mm').format(date);
-
-      notifyHelper.scheduledNotification(
-        int.parse(myTime.toString().split(':')[0]),
-        int.parse(myTime.toString().split(':')[1]),
-        task,
-      );
-    } catch (e) {
-      print('Error parsing time: $e');
-    }
+    notifyHelper.scheduleTaskNotifications(task);
   }
 
   Widget _showAllTasksTimeline() {
