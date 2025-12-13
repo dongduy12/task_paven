@@ -1,0 +1,4 @@
+debug: flutter run --dart-define=GEMINI_API_KEY=AIzaSyDnBqgeW9xwhG80E62DugAZI24EDlFaaAA
+release: flutter build appbundle --release --dart-define-from-file=.env
+
+logo: dart run flutter_launcher_icons
