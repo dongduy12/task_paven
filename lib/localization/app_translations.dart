@@ -33,6 +33,18 @@ class AppTranslations extends Translations {
           'summary_completed': 'Completed',
           'summary_pending': 'Pending',
           'summary_overdue': 'Overdue tasks',
+          'onboarding_skip': 'Skip',
+          'onboarding_next': 'Next',
+          'onboarding_get_started': 'Get started',
+          'onboarding_plan_title': 'Plan tasks with clarity',
+          'onboarding_plan_desc':
+              'Organize everything in one place and keep your day structured.',
+          'onboarding_focus_title': 'Stay focused with smart reminders',
+          'onboarding_focus_desc':
+              'Use notifications and quick actions to never miss a commitment.',
+          'onboarding_progress_title': 'Track your progress effortlessly',
+          'onboarding_progress_desc':
+              'View your completion stats and celebrate every milestone.',
         },
         'vi': {
           'tab_by_day': 'Theo ngày',
@@ -65,6 +77,18 @@ class AppTranslations extends Translations {
           'summary_completed': 'Hoàn thành',
           'summary_pending': 'Chưa hoàn thành',
           'summary_overdue': 'Nhiệm vụ quá hạn',
+          'onboarding_skip': 'Bỏ qua',
+          'onboarding_next': 'Tiếp tục',
+          'onboarding_get_started': 'Bắt đầu ngay',
+          'onboarding_plan_title': 'Lên kế hoạch rõ ràng',
+          'onboarding_plan_desc':
+              'Sắp xếp mọi việc ở một nơi và giữ lịch trình gọn gàng.',
+          'onboarding_focus_title': 'Tập trung với nhắc nhở thông minh',
+          'onboarding_focus_desc':
+              'Dùng thông báo và thao tác nhanh để không bỏ lỡ cam kết nào.',
+          'onboarding_progress_title': 'Theo dõi tiến trình dễ dàng',
+          'onboarding_progress_desc':
+              'Xem thống kê hoàn thành và ăn mừng từng cột mốc.',
         }
       };
 }
