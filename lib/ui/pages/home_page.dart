@@ -228,13 +228,18 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildAssistantButton() {
-    return FloatingActionButton(
-      onPressed: () => Get.to(() => const GeminiAssistantPage()),
-      backgroundColor: primaryClr,
-      child: SvgPicture.asset(
-        'images/chatbot.svg',
-        width: 26,
-        height: 26,
+    return InkWell(
+      onTap: () => Get.to(() => const GeminiAssistantPage()),
+      // Đặt borderRadius để tạo hiệu ứng khi chạm (splash effect)
+      // Nếu không muốn splash effect, dùng GestureDetector
+      borderRadius: BorderRadius.circular(100),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0), // Thêm padding nếu cần khoảng trống xung quanh icon
+        child: SvgPicture.asset(
+          'images/chatbot.svg',
+          width: 48,
+          height: 48,
+        ),
       ),
     );
   }
