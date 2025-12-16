@@ -22,17 +22,17 @@ class _OnboardingPageState extends State<OnboardingPage> {
     _OnboardingStep(
       titleKey: 'onboarding_plan_title',
       descriptionKey: 'onboarding_plan_desc',
-      assetPath: 'images/task.svg',
+      assetPath: 'images/list.png',
     ),
     _OnboardingStep(
       titleKey: 'onboarding_focus_title',
       descriptionKey: 'onboarding_focus_desc',
-      assetPath: 'images/chatbot.svg',
+      assetPath: 'images/chatbot.png',
     ),
     _OnboardingStep(
       titleKey: 'onboarding_progress_title',
       descriptionKey: 'onboarding_progress_desc',
-      assetPath: 'images/task.svg',
+      assetPath: 'images/process.png',
     ),
   ];
 

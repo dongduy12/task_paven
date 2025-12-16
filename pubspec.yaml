@@ -76,6 +76,9 @@ flutter:
     - images/person.jpeg
     - images/task.svg
     - images/chatbot.svg
+    - images/chatbot.png
+    - images/process.png
+    - images/list.png
     - .env
   # To add assets to your application, add an assets section, like this:
   # assets:
