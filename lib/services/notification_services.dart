@@ -162,9 +162,18 @@ class NotifyHelper {
       } else if (repeat == 'Weekly') {
         adjustedDate = adjustedDate.add(const Duration(days: 7));
       } else if (repeat == 'Monthly') {
-        adjustedDate = tz.TZDateTime(tz.local, adjustedDate.year,
-            adjustedDate.month + 1, adjustedDate.day, adjustedDate.hour,
-            adjustedDate.minute);
+        adjustedDate = tz.TZDateTime(
+          tz.local,
+          adjustedDate.year,
+          adjustedDate.month + 1,
+          adjustedDate.day,
+          adjustedDate.hour,
+          adjustedDate.minute,
+        );
+      } else {
+        // Nếu thời gian nhắc trước đã trôi qua nhưng nhiệm vụ vẫn ở trong tương lai,
+        // hãy gửi thông báo ngay thay vì bỏ lỡ hoàn toàn.
+        adjustedDate = now.add(const Duration(seconds: 5));
       }
     }
 
