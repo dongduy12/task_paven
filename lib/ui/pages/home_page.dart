@@ -44,6 +44,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   DateTime _selectedDate = DateTime.now();
+  DateTime _datePickerStartDate = DateTime.now();
   final TaskController _taskController = Get.put(TaskController());
 
   @override
@@ -277,38 +278,98 @@ class _HomePageState extends State<HomePage> {
   _addDateBar() {
     return Container(
       margin: const EdgeInsets.only(left: 20, right: 10, top: 10),
-      child: DatePicker(
-        DateTime.now(),
-        width: 80,
-        height: 100,
-        initialSelectedDate: _selectedDate,
-        selectedTextColor: Colors.white,
-        selectionColor: primaryClr,
-        dateTextStyle: GoogleFonts.lato(
-            textStyle: const TextStyle(
-          color: Colors.grey,
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-        )),
-        dayTextStyle: GoogleFonts.lato(
-            textStyle: const TextStyle(
-          color: Colors.grey,
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-        )),
-        monthTextStyle: GoogleFonts.lato(
-            textStyle: const TextStyle(
-          color: Colors.grey,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        )),
-        onDateChange: (newDate) {
-          setState(() {
-            _selectedDate = newDate;
-          });
-        },
+      child: Row(
+        children: [
+          Expanded(
+            child: DatePicker(
+              _datePickerStartDate,
+              width: 80,
+              height: 100,
+              initialSelectedDate: _selectedDate,
+              selectedTextColor: Colors.white,
+              selectionColor: primaryClr,
+              dateTextStyle: GoogleFonts.lato(
+                  textStyle: const TextStyle(
+                color: Colors.grey,
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+              )),
+              dayTextStyle: GoogleFonts.lato(
+                  textStyle: const TextStyle(
+                color: Colors.grey,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              )),
+              monthTextStyle: GoogleFonts.lato(
+                  textStyle: const TextStyle(
+                color: Colors.grey,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              )),
+              onDateChange: _updateSelectedDate,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Tooltip(
+            message: 'calendar_history_tooltip'.tr,
+            child: OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                foregroundColor:
+                    Get.isDarkMode ? Colors.white : Theme.of(context).primaryColorDark,
+              ),
+              onPressed: _selectDateFromCalendar,
+              icon: const Icon(Icons.calendar_month),
+              label: Text(
+                'calendar_history_button'.tr,
+                style: GoogleFonts.lato(
+                  textStyle: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
+  }
+
+  void _updateSelectedDate(DateTime newDate) {
+    setState(() {
+      _selectedDate = newDate;
+      if (newDate.isBefore(_datePickerStartDate)) {
+        _datePickerStartDate =
+            DateTime(newDate.year, newDate.month, newDate.day);
+      }
+    });
+  }
+
+  Future<void> _selectDateFromCalendar() async {
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: primaryClr,
+              onPrimary: Colors.white,
+              onSurface: Get.isDarkMode ? Colors.white : Colors.black,
+            ),
+            dialogBackgroundColor: context.theme.colorScheme.background,
+          ),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
+    );
+
+    if (pickedDate != null) {
+      _updateSelectedDate(pickedDate);
+    }
   }
 
   Future<void> _onRefresh() async {
