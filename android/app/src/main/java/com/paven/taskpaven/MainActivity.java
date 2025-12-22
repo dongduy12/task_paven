@@ -1,4 +1,4 @@
-package com.paven_task.task_paven;
+package com.paven.taskpaven;
 
 import androidx.annotation.NonNull;
 

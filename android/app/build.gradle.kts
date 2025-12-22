@@ -13,7 +13,7 @@ val keystoreProperties = Properties().apply {
 }
 
 android {
-    namespace = "com.paven_task.task_paven"
+    namespace = "com.paven.taskpaven"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -24,7 +24,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.paven_task.task_paven"
+        applicationId = "com.paven.taskpaven"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
