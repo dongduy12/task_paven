@@ -332,7 +332,7 @@ class _HomePageState extends State<HomePage> {
     if (pickedDate != null) {
       setState(() {
         _selectedDate = pickedDate;
-        _datePickerController.setDate(pickedDate);
+        _datePickerController.animateToDate(pickedDate);
       });
     }
   }
