@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:task_paven/ui/pages/home_page.dart';
 import 'package:task_paven/ui/theme.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
@@ -85,8 +85,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
                           children: [
                             SizedBox(
                               height: 260,
-                              child: SvgPicture.asset(
-                                step.assetPath,
+                          child: _OnboardingAsset(
+                                assetPath: step.assetPath,
                                 semanticsLabel: step.titleKey.tr,
                               ),
                             ),
@@ -185,4 +185,30 @@ class _OnboardingStep {
     required this.descriptionKey,
     required this.assetPath,
   });
+}
+
+class _OnboardingAsset extends StatelessWidget {
+  final String assetPath;
+  final String semanticsLabel;
+
+  const _OnboardingAsset({
+    required this.assetPath,
+    required this.semanticsLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (assetPath.toLowerCase().endsWith('.svg')) {
+      return SvgPicture.asset(
+        assetPath,
+        semanticsLabel: semanticsLabel,
+      );
+    }
+
+    return Image.asset(
+      assetPath,
+      fit: BoxFit.contain,
+      semanticLabel: semanticsLabel,
+    );
+  }
 }
