@@ -278,10 +278,11 @@ class _HomePageState extends State<HomePage> {
   _addDateBar() {
     return Container(
       margin: const EdgeInsets.only(left: 20, right: 10, top: 10),
-      child: Row(
-        children: [
-          Expanded(
-            child: DatePicker(
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            DatePicker(
               _datePickerStartDate,
               width: 80,
               height: 100,
@@ -308,30 +309,33 @@ class _HomePageState extends State<HomePage> {
               )),
               onDateChange: _updateSelectedDate,
             ),
-          ),
-          const SizedBox(width: 8),
-          Tooltip(
-            message: 'calendar_history_tooltip'.tr,
-            child: OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                foregroundColor:
-                    Get.isDarkMode ? Colors.white : Theme.of(context).primaryColorDark,
-              ),
-              onPressed: _selectDateFromCalendar,
-              icon: const Icon(Icons.calendar_month),
-              label: Text(
-                'calendar_history_button'.tr,
-                style: GoogleFonts.lato(
-                  textStyle: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
+            const SizedBox(width: 12),
+            Tooltip(
+              message: 'calendar_history_tooltip'.tr,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                  foregroundColor:
+                      Get.isDarkMode ? Colors.white : Theme.of(context).primaryColorDark,
+                  side: BorderSide(
+                    color: Get.isDarkMode ? Colors.white60 : primaryClr,
+                  ),
+                ),
+                onPressed: _selectDateFromCalendar,
+                icon: const Icon(Icons.calendar_month),
+                label: Text(
+                  'calendar_history_button'.tr,
+                  style: GoogleFonts.lato(
+                    textStyle: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
