@@ -7,6 +7,7 @@ import 'package:task_paven/services/theme_services.dart';
 import 'package:task_paven/ui/pages/home_page.dart';
 import 'package:task_paven/ui/pages/onboarding_page.dart';
 import 'package:task_paven/ui/theme.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'db/db_helper.dart';
 
@@ -50,6 +51,15 @@ class MyApp extends StatelessWidget {
       translations: AppTranslations(),
       locale: _initialLocale,
       fallbackLocale: const Locale('en'),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en'),
+        Locale('vi'),
+      ],
       title: 'Task Paven',
       debugShowCheckedModeBanner: false,
       home: hasCompletedOnboarding ? const HomePage() : const OnboardingPage(),

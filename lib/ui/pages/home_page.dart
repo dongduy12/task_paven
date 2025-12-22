@@ -30,6 +30,7 @@ class _HomePageState extends State<HomePage> {
   late NotifyHelper notifyHelper;
   final _settingsBox = GetStorage();
   late String _selectedLanguageCode;
+  final DatePickerController _datePickerController = DatePickerController();
 
   @override
   void initState() {
@@ -250,18 +251,25 @@ class _HomePageState extends State<HomePage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                DateFormat.yMMMMd().format(DateTime.now()),
-                style: subHeadingStyle,
+          InkWell(
+            onTap: _selectDate,
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    DateFormat.yMMMMd().format(_selectedDate),
+                    style: subHeadingStyle,
+                  ),
+                  Text(
+                    'today_label'.tr,
+                    style: subHeadingStyle,
+                  ),
+                ],
               ),
-              Text(
-                'today_label'.tr,
-                style: subHeadingStyle,
-              ),
-            ],
+            ),
           ),
           MyButton(
               label: '+ ${'add_task'.tr}',
@@ -279,6 +287,7 @@ class _HomePageState extends State<HomePage> {
       margin: const EdgeInsets.only(left: 20, right: 10, top: 10),
       child: DatePicker(
         DateTime.now(),
+        controller: _datePickerController,
         width: 80,
         height: 100,
         initialSelectedDate: _selectedDate,
@@ -309,6 +318,23 @@ class _HomePageState extends State<HomePage> {
         },
       ),
     );
+  }
+
+  Future<void> _selectDate() async {
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      locale: Locale(_selectedLanguageCode),
+    );
+
+    if (pickedDate != null) {
+      setState(() {
+        _selectedDate = pickedDate;
+        _datePickerController.animateToDate(pickedDate);
+      });
+    }
   }
 
   Future<void> _onRefresh() async {
