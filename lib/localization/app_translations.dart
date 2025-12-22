@@ -45,6 +45,8 @@ class AppTranslations extends Translations {
           'onboarding_progress_title': 'Track your progress effortlessly',
           'onboarding_progress_desc':
               'View your completion stats and celebrate every milestone.',
+          'calendar_history_button': 'Calendar',
+          'calendar_history_tooltip': 'Pick any date to review task history',
         },
         'vi': {
           'tab_by_day': 'Theo ngày',
@@ -89,6 +91,8 @@ class AppTranslations extends Translations {
           'onboarding_progress_title': 'Theo dõi tiến trình dễ dàng',
           'onboarding_progress_desc':
               'Xem thống kê hoàn thành và ăn mừng từng cột mốc.',
+          'calendar_history_button': 'Lịch',
+          'calendar_history_tooltip': 'Chọn ngày bất kỳ để xem lịch sử nhiệm vụ',
         }
       };
 }

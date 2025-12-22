@@ -91,6 +91,11 @@ class NotifyHelper {
     final startDateTime = _combineDateAndTime(parsedDate, task.startTime!);
     final endDateTime =
         task.endTime != null ? _combineDateAndTime(parsedDate, task.endTime!) : null;
+    final now = DateTime.now();
+
+    if (repeat == 'None' && startDateTime.isBefore(now)) {
+      return;
+    }
 
     await _scheduleNotification(
       id: task.id!,
@@ -121,13 +126,19 @@ class NotifyHelper {
     required int remindMinutes,
     required String repeat,
   }) async {
+    final targetDate = _nextInstance(
+        scheduledDate.hour, scheduledDate.minute, remindMinutes, repeat, scheduledDate);
+
+    if (targetDate.isBefore(tz.TZDateTime.now(tz.local))) {
+      return;
+    }
+
     await flutterLocalNotificationsPlugin.zonedSchedule(
       id,
       title,
       body,
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      _nextInstance(
-          scheduledDate.hour, scheduledDate.minute, remindMinutes, repeat, scheduledDate),
+      targetDate,
       const NotificationDetails(
         android: AndroidNotificationDetails(
           'your channel id',
@@ -157,7 +168,9 @@ class NotifyHelper {
     var adjustedDate = afterRemind(remind, targetDateTime);
 
     if (adjustedDate.isBefore(now)) {
-      if (repeat == 'Daily') {
+      if (targetDateTime.isAfter(now)) {
+        adjustedDate = targetDateTime;
+      } else if (repeat == 'Daily') {
         adjustedDate = adjustedDate.add(const Duration(days: 1));
       } else if (repeat == 'Weekly') {
         adjustedDate = adjustedDate.add(const Duration(days: 7));
@@ -165,6 +178,8 @@ class NotifyHelper {
         adjustedDate = tz.TZDateTime(tz.local, adjustedDate.year,
             adjustedDate.month + 1, adjustedDate.day, adjustedDate.hour,
             adjustedDate.minute);
+      } else {
+        adjustedDate = now.add(const Duration(seconds: 10));
       }
     }
 
